@@ -5,7 +5,8 @@
     "page/component/pages/view/view",
     "page/component/pages/scroll-view/scroll-view",
     "page/component/pages/swiper/swiper",
-
+    "page/component/pages/swinetools/swinetools",
+  
     "page/component/pages/text/text",
     "page/component/pages/icon/icon",
     "page/component/pages/progress/progress",

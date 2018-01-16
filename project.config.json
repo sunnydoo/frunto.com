@@ -10,7 +10,7 @@
 	"compileType": "miniprogram",
 	"libVersion": "1.6.6",
 	"appid": "wxe48ab2ad2730d779",
-	"projectname": "DemoCheck",
+	"projectname": "SwineTools",
 	"condition": {
 		"search": {
 			"current": -1,
