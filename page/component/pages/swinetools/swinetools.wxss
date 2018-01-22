@@ -26,3 +26,40 @@ button:last-child{
 .page-foot{
   margin-top: 50rpx;
 }
+
+.table {
+  border: 0px solid darkgray;
+}
+.tr {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  height: 3rem;
+  align-items: center;
+}
+.td {
+    width:20%;
+    justify-content: center;
+    text-align: center;
+}
+
+.td-name {
+    width:40%;
+    justify-content: center;
+    text-align: center;
+}
+
+.bg-w{
+  background: snow;
+}
+.bg-g{
+  background: #E6F3F9;
+}
+.th {
+  width: 40%;
+  justify-content: center;
+  background: white;
+  display: flex;
+  height: 3rem;
+  align-items: center;
+}
