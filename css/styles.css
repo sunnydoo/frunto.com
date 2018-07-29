@@ -1,4 +1,4 @@
-@import url(https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700);
+/* @import url(https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700); */
  
 
 * {
@@ -96,7 +96,7 @@ a:hover {
 }
 
 .btn-primary {
-    background: #0d90ff;
+    background: #339900;
 }
 
 .form-control {
@@ -1037,6 +1037,7 @@ footer {
 }
 /*Packages*/
 .cuadro_intro_hover {
+    opacity: :0.8
     padding: 0px;
     position: relative;
     overflow: hidden;
@@ -1045,7 +1046,7 @@ footer {
 }
 
 .cuadro_intro_hover:hover .caption {
-    opacity: 1;
+    opacity: 0.8;
     transform: translateY(-150px);
     -webkit-transform: translateY(-150px);
     -moz-transform: translateY(-150px);
