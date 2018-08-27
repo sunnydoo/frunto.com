@@ -845,7 +845,7 @@ hr {
 }
 body {
 	margin: 0;
-	font-family: Arial, sans-serif;
+	font-family: "Microsoft YaHei", "Segoe UI", "Lucida Grande", Helvetica, Arial, sans-serif, FreeSans, Arimo
 }
 #navigation {
 	position: fixed;
