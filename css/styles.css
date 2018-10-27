@@ -187,6 +187,9 @@ a:hover {
 .btn-primary {
 	background: #008E4D;
 }
+.font-big {
+    font-size: 25px;
+}
 .form-control {
 	border-radius: 0px;
 }
@@ -570,6 +573,18 @@ a.arrow-link:hover {
 img, video, iframe, embed, object {
 	max-width: 100%;
 	height: auto;
+}
+
+/* Login
+   --------------------------------------------------*/
+
+#loginTopfarm {
+	background: #fff;
+	padding-top: 200px;
+	padding-bottom: 200px;
+    font-size: 20px;
+    text-align: center;
+	overflow: hidden;
 }
 /* Features
     -------------------------------------------------*/
