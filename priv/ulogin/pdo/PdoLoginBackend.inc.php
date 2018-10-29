@@ -94,6 +94,31 @@ class ulPdoLoginBackend extends ulLoginBackend
 		return $username;
 	}
 
+    public function Project($uid)
+	{
+		$project = '';
+
+		$stmt = ulPdoDb::Prepare('auth', 'SELECT project FROM ul_logins WHERE id=?');
+		if (!ulPdoDb::BindExec(
+			$stmt,
+			array(		// output
+				&$project, 'str'
+			),
+			array(		// input
+				&$uid, 'int'
+			)
+		))
+		{
+			ul_db_fail();
+			return false;
+		}
+
+		if (ulPdoDb::Fetch($stmt) == false)
+			return false;
+
+		return $project;
+	}
+    
 	// Given a user-friendly unique identifier, returns
 	// a backed-specific unique identifier.
 	// False on error.
@@ -151,20 +176,26 @@ class ulPdoLoginBackend extends ulLoginBackend
 	// Returns true if successful, or an error code.
 	// The format of the $profile parameter is backend-specific
 	// and need not/may not be supported by the current backend.
-	function CreateLogin($username, $password, $profile)
+    function CreateLogin($username, $password, $profile){
+        CreateLoginWithProj($username, $password, NULL, $profile);
+    }
+        
+	function CreateLoginWithProj($username, $password, $project, $profile)
 	{
 		// Create password hash with a new salt
 		$hashed_password = ulPassword::Hash($password, UL_PWD_FUNC);
-
+        
+        $project = $project or 'default';
 		$now = ulUtils::nowstring();
 		$past = date_format(date_create('1000 years ago'), UL_DATETIME_FORMAT);
-		$stmt = ulPdoDb::Prepare('update', 'INSERT INTO ul_logins (username, password, date_created, last_login, block_expires) VALUES (?, ?, ?, ?, ?)');
+		$stmt = ulPdoDb::Prepare('update', 'INSERT INTO ul_logins (username, password, project, date_created, last_login, block_expires) VALUES (?, ?, ?, ?, ?, ?)');
 		if (!ulPdoDb::BindExec(
 			$stmt,
 			NULL,		// output
 			array(		// input
 				&$username, 'str',
 				&$hashed_password, 'str',
+                &$project, 'str',
 				&$now, 'str',
 				&$now, 'str',
 				&$past, 'str'

@@ -20,6 +20,7 @@ CREATE TABLE "ul_logins" (
   "id" int(11) NOT NULL AUTO_INCREMENT,
   "username" varchar(400) COLLATE utf8_unicode_ci NOT NULL,
   "password" varchar(2048) CHARACTER SET ascii NOT NULL,
+  "project"  varchar(1024) COLLATE utf8_unicode_ci NOT NULL,
   "date_created" varchar(26) CHARACTER SET ascii NOT NULL,
   "last_login" varchar(26) CHARACTER SET ascii NOT NULL,
   "block_expires" varchar(26) CHARACTER SET ascii NOT NULL,

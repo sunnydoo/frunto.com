@@ -266,6 +266,11 @@ class uLogin
 	{
 		return $this->Backend->Username($uid);
 	}
+    
+    public function Project($uid)
+	{
+		return $this->Backend->Project($uid);
+	}
 
 	// Returns the uid corresponding to a username.
 	// Returns false on error.
@@ -295,13 +300,18 @@ class uLogin
   // backend is supposed to simultanously contain login and profile information (eg. LDAP.)
 	public function CreateUser($username, $password, $profile=NULL)
 	{
-		// Validate user input
+	   CreateUserWithProj($username, $password, NULL, $profile);
+	}
+    
+    public function CreateUserWithProj($username, $password, $project, $profile) {
+        
+        // Validate user input
 		if (!self::ValidateUsername($username))
 			return false;
 		if (!ulPassword::IsValid($password))
 			return false;
 
-		$ret = $this->Backend->CreateLogin($username, $password, $profile);
+		$ret = $this->Backend->CreateLoginWithProj($username, $password, $project, $profile);
 		if ($ret !== true)
 		{
 			if ($ret == ulLoginBackend::ALREADY_EXISTS)
@@ -313,7 +323,7 @@ class uLogin
 		ulLog::Log('create login', $username, ulUtils::GetRemoteIP(false));
 
 		return true;
-	}
+    }
 
 	// Sets a new password to a user.
 	// Returns true if successful, false otherwise.

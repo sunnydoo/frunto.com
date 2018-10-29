@@ -1,3 +1,43 @@
+
+<?php 
+
+    require('priv/ulogin/config/all.inc.php');
+    require('priv/ulogin/main.inc.php');  
+
+    echo "Start of PHP";
+
+    if (!sses_running())
+        sses_start();
+
+    $msg = '';
+
+    function appLogin($uid, $username, $ulogin){
+        $_SESSION['uid'] = $uid;
+        $_SESSION['username'] = $username;
+    }
+    
+    echo "\nbefore uLogin";
+    $ulogin = new uLogin(appLogin);
+    echo "\nafter uLogin";
+
+    if( $_SERVER['REQUEST_METHOD'] == 'POST' ) { 
+        if (isset($_POST['nonce']) && ulNonce::Verify('login', $_POST['nonce'])){        
+            $ulogin->Authenticate($_POST['user'],  $_POST['pwd']);
+            if ($ulogin->IsAuthSuccess()){
+                $project = $ulogin->Project($_SESSION['uid']);
+                header("Location:tabl/$project/");
+            }
+            else 
+            {
+                $msg = '账号或密码有误，请重新输入';
+            }
+        }else
+            $msg = '未获得访问授权，请联系管理员support@frunto.com';
+    }
+    
+    echo "End of PHP" ;
+?>
+
 <!doctype html>
 <!--[if IE 7 ]>    <html lang="zh-gb" class="isie ie7 oldie no-js"> <![endif]-->
 <!--[if IE 8 ]>    <html lang="zh-gb" class="isie ie8 oldie no-js"> <![endif]-->
@@ -58,9 +98,9 @@
           <div class="col-sm-4 col-md-offset-4 col-md-4">
               
 		  		<!--NOTE: Update your email Id in "contact_me.php" file in order to receive emails from your contact form-->
-					<form name="sentMessage" id="contactForm" method="post"  action="priv/dispatch.php"> 
+					<form name="sentMessage" id="contactForm" method="post"  action="login.php"> 
                     <h2>TopFarm 欢迎您</h2>
-                    <p>&nbsp;</p>
+                    <p><?=$msg?></p>
 					<div class="control-group">
 					<div class="controls">
 					<input type="text" class="form-control" 
@@ -74,13 +114,9 @@
 					<input type="password" class="form-control"  
 					id="pwd" name="pwd" placeholder="密码" required
 					data-validation-required-message="请输入密码" />
-                        
-                    <?php require('priv/ulogin/config/all.inc.php');
-                          require('priv/ulogin/main.inc.php');?>  
+                
                     <input type="hidden" id="nonce" name="nonce" value="<?php echo ulNonce::Create('login');?>">
-                    <input type="hidden" id="action" name="action" value="login">
-
-
+       
 					</div>
 					</div> 		 
                                         
