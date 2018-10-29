@@ -1,13 +1,5 @@
 <?php
 
-// This is an example that shows how to incorporate uLogin into a webpage.
-// It showcases nonces, login authentication, account creation, deletion and
-// remember-me functionality, all at the same time in a single page.
-// Because of the number of functions shown and all the comments,
-// it seems a little bit longish, but fear not.
-
-// This is the one and only public include file for uLogin.
-// Include it once on every authentication and for every protected page.
 require_once('ulogin/config/all.inc.php');
 require_once('ulogin/main.inc.php');
 

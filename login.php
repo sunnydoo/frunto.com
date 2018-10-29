@@ -58,7 +58,7 @@
           <div class="col-sm-4 col-md-offset-4 col-md-4">
               
 		  		<!--NOTE: Update your email Id in "contact_me.php" file in order to receive emails from your contact form-->
-					<form name="sentMessage" id="contactForm" method="post"  action="dispatch.php"> 
+					<form name="sentMessage" id="contactForm" method="post"  action="priv/dispatch.php"> 
                     <h2>TopFarm 欢迎您</h2>
                     <p>&nbsp;</p>
 					<div class="control-group">
@@ -75,9 +75,9 @@
 					id="pwd" name="pwd" placeholder="密码" required
 					data-validation-required-message="请输入密码" />
                         
-                    
-                    <?php require('priv/ulogin/main.inc.php'); ?>  
-                    <input type="text" id="nonce" name="nonce" value="<?php echo ulNonce::Create('login') ?>">
+                    <?php require('priv/ulogin/config/all.inc.php');
+                          require('priv/ulogin/main.inc.php');?>  
+                    <input type="hidden" id="nonce" name="nonce" value="<?php echo ulNonce::Create('login');?>">
                     <input type="hidden" id="action" name="action" value="login">
 
 
