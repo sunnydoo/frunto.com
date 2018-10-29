@@ -58,13 +58,13 @@
           <div class="col-sm-4 col-md-offset-4 col-md-4">
               
 		  		<!--NOTE: Update your email Id in "contact_me.php" file in order to receive emails from your contact form-->
-					<form name="sentMessage" id="contactForm"  action="priv/dispatch.php"> 
+					<form name="sentMessage" id="contactForm" method="post"  action="dispatch.php"> 
                     <h2>TopFarm 欢迎您</h2>
                     <p>&nbsp;</p>
 					<div class="control-group">
 					<div class="controls">
 					<input type="text" class="form-control" 
-					placeholder="账号" id="user" required
+					placeholder="账号" id="user" name="user" required
 					data-validation-required-message="请输入账号" />
 					<p class="help-block"></p>
 					</div>
@@ -72,11 +72,18 @@
 					<div class="control-group">
 					<div class="controls">
 					<input type="password" class="form-control"  
-					id="pwd" placeholder="密码" required
+					id="pwd" name="pwd" placeholder="密码" required
 					data-validation-required-message="请输入密码" />
+                        
+                    
+                    <?php require('priv/ulogin/main.inc.php'); ?>  
+                    <input type="text" id="nonce" name="nonce" value="<?php echo ulNonce::Create('login') ?>">
+                    <input type="hidden" id="action" name="action" value="login">
+
+
 					</div>
 					</div> 		 
-					<div id="success"> </div> <!-- For success/fail messages -->
+                                        
 					<button type="submit" class="btn btn-primary font-big">登 录</button><br />
 					</form>
 		  </div>
