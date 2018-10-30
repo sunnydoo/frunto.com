@@ -25,7 +25,7 @@
             $ulogin->Authenticate($_POST['user'],  $_POST['pwd']);
             if ($ulogin->IsAuthSuccess()){
                 $project = $ulogin->Project($_SESSION['uid']);
-                header("Location:tabl/$project/");
+                header("Location:http://www.frunto.com/tabl/$project/");
             }
             else 
             {
