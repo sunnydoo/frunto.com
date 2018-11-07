@@ -4,8 +4,6 @@
     require('priv/ulogin/config/all.inc.php');
     require('priv/ulogin/main.inc.php');  
 
-    echo "Start of PHP";
-
     if (!sses_running())
         sses_start();
 
@@ -16,16 +14,15 @@
         $_SESSION['username'] = $username;
     }
     
-    echo "\nbefore uLogin";
-    $ulogin = new uLogin(appLogin);
-    echo "\nafter uLogin";
-
     if( $_SERVER['REQUEST_METHOD'] == 'POST' ) { 
-        if (isset($_POST['nonce']) && ulNonce::Verify('login', $_POST['nonce'])){        
+        if (isset($_POST['nonce']) && ulNonce::Verify('login', $_POST['nonce'])){ 
+            $ulogin = new uLogin(appLogin);
             $ulogin->Authenticate($_POST['user'],  $_POST['pwd']);
             if ($ulogin->IsAuthSuccess()){
+                $currentSessionID = session_id();
                 $project = $ulogin->Project($_SESSION['uid']);
-                header("Location:http://www.frunto.com/tabl/$project/");
+                $_SESSION[$project] = 'Authenticated';
+                header("Location:http://www.frunto.com/tabl/$project/?session=$currentSessionID");
             }
             else 
             {
@@ -35,7 +32,6 @@
             $msg = '未获得访问授权，请联系管理员support@frunto.com';
     }
     
-    echo "End of PHP" ;
 ?>
 
 <!doctype html>

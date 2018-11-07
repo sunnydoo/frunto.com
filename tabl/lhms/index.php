@@ -1,15 +1,13 @@
 <?php
 
-// This file demonstrated how to authenticate a user with 'Trusted Ticket' 
-// of Tableau Server. 
+// The main project of 漯河民社 
 //
 // Author:  Wang Robin
 // Email :  wang.robin@frunto.com
 // All Rights researved by http://www.frunto.com
 
-$file_path = dirname(__FILE__, 2)."/TablUtil.php";
-
-require_once($file_path);
+require_once(dirname(__FILE__, 2)."/TablUtil.php");
+TablUtil::return_if_invalid_auth(basename(__DIR__));
 
 $current_view = "views/TopFarm/sheet0";
 $url = TablUtil::get_trusted_url($current_view);

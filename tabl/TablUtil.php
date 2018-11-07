@@ -48,5 +48,15 @@ public static function get_trusted_url($view_url) {
     }
 }
     
+public static function return_if_invalid_auth($project) {
+    $currentSessionID = $_GET['session'];
+
+    session_id($currentSessionID);
+    session_start();
+
+    if( $_SESSION[$project] != 'Authenticated') 
+        header("Location:http://www.frunto.com/login.php");
+}
+    
 }
 ?>

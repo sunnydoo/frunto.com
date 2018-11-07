@@ -357,63 +357,63 @@ class ulSessionManager
 
 // Use instead of session_destroy() to destroy a secure session that has been
 // started with sses_start().
-function sses_destroy()
-{
-  ulLog::DebugLog('Session erase requested by host.', 0);
-	ulSessionManager::sessionDestroy();
-}
+function sses_destroy() { session_destroy(); }
+//{
+//  ulLog::DebugLog('Session erase requested by host.', 0);
+//	ulSessionManager::sessionDestroy();
+//}
 
 // Use instead of session_start() to start a secure session.
-function sses_start($sid_regen_prob=UL_SESSION_REGEN_PROB)
-{
-  ulLog::DebugLog('Session start requested by host.', 0);
-	if (!ulSessionManager::sessionStart($sid_regen_prob))
-	{
-    // ulSessionManager::sessionStart does not start a new session
-    // if it invalidated an old one. So we call it one more time
-    // to actually try to start a new session.
-		if (!(ulSessionManager::sessionStart($sid_regen_prob)))
-		{
-      ulLog::DebugLog('Cannot start uLogin session.', 5);
-			ul_fail('Cannot start session.');
-			return false;
-		}
-		return true;
-	}
-	else
-		ulSessionManager::$TrustInvalidated = false;
-
-	return true;
-}
+function sses_start($sid_regen_prob=UL_SESSION_REGEN_PROB) { session_start(); }
+//{
+//  ulLog::DebugLog('Session start requested by host.', 0);
+//	if (!ulSessionManager::sessionStart($sid_regen_prob))
+//	{
+//    // ulSessionManager::sessionStart does not start a new session
+//    // if it invalidated an old one. So we call it one more time
+//    // to actually try to start a new session.
+//		if (!(ulSessionManager::sessionStart($sid_regen_prob)))
+//		{
+//      ulLog::DebugLog('Cannot start uLogin session.', 5);
+//			ul_fail('Cannot start session.');
+//			return false;
+//		}
+//		return true;
+//	}
+//	else
+//		ulSessionManager::$TrustInvalidated = false;
+//
+//	return true;
+//}
 
 // Use instead of session_regenerate_id() to change the session
 // identifier. Call if user privileges change.
-function sses_regenerate_id($delete_old_session = false)
-{
-  ulLog::DebugLog('New session id requested by host.', 0);
-	return ulSessionManager::changeSessionId($delete_old_session, true);
-}
+function sses_regenerate_id($delete_old_session = false) { session_regenerate_id();}
+//{
+//  ulLog::DebugLog('New session id requested by host.', 0);
+//	return ulSessionManager::changeSessionId($delete_old_session, true);
+//}
 
 // Use instead of session_write_close().
-function sses_write_close()
-{
-  ulLog::DebugLog('Session close requested by host.');
-	ulSessionManager::sessionWriteClose();
-}
+function sses_write_close() { session_write_close(); }
+//{
+//  ulLog::DebugLog('Session close requested by host.');
+//	ulSessionManager::sessionWriteClose();
+//}
 
 // Are we inside a secure session? Returns a boolean.
-function sses_running()
-{
-	return ulSessionManager::$SessionRunning;
-}
+function sses_running() { return session_status() == PHP_SESSION_ACTIVE; }
+//{
+//	return ulSessionManager::$SessionRunning;
+//}
 
 // Returns a boolean value that indicates if the previous session
 // was continued successfully (false), or if it has been invalidated
 // and restarted to maintain security (true). A return value of true
 // means that the user needs to be re-authenticated.
-function sses_invalidated()
-{
-	return ulSessionManager::$TrustInvalidated;
-}
+function sses_invalidated() { return false; }
+//{
+//	return ulSessionManager::$TrustInvalidated;
+//}
 
 ?>
