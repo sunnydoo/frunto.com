@@ -6,6 +6,8 @@
 
     if (!sses_running())
         sses_start();
+    
+    define('SESSION_LIFETIME', 30); // in minutes
 
     $msg = '';
 
@@ -21,7 +23,11 @@
             if ($ulogin->IsAuthSuccess()){
                 $currentSessionID = session_id();
                 $project = $ulogin->Project($_SESSION['uid']);
+                
+                $_SESSION['start'] = time(); 
+                $_SESSION['expire'] = $_SESSION['start'] + (SESSION_LIFETIME * 60);
                 $_SESSION[$project] = 'Authenticated';
+                
                 header("Location:http://www.frunto.com/tabl/$project/?session=$currentSessionID");
             }
             else 

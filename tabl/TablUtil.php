@@ -54,9 +54,10 @@ public static function return_if_invalid_auth($project) {
     session_id($currentSessionID);
     session_start();
 
-    if( $_SESSION[$project] != 'Authenticated') 
+    if(!isset($_SESSION[$project]) or time() > $_SESSION['expire']) {
+        session_destroy();
         header("Location:http://www.frunto.com/login.php");
+    }   
 }
-    
 }
 ?>
