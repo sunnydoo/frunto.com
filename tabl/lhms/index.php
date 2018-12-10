@@ -12,7 +12,7 @@ TablUtil::return_if_invalid_auth(basename(__DIR__));
 $current_view = "views/TopFarm/sheet0";
 $url = TablUtil::get_trusted_url($current_view);
 
-$title = "漯河民社-TopFarm";
+$title = "TopFarm-漯河民社";
 ?>
 
 <!DOCTYPE html>
@@ -40,7 +40,6 @@ $title = "漯河民社-TopFarm";
 	<link rel="stylesheet" type="text/css" href="../codebase/webix.css">
 	<link rel="stylesheet" href="https://cdn.materialdesignicons.com/2.7.94/css/materialdesignicons.css" type="text/css" charset="utf-8">
     
-	<script type="text/javascript" src="../menu.js"></script>
     <script type="text/javascript">
         function initViz() {
             var containerDiv = document.getElementById("vizContainer");
@@ -60,10 +59,17 @@ $title = "漯河民社-TopFarm";
     </script>
 </head>
 
-<body onload="initViz();">
-    
+<body>
     <script type="text/javascript">
-
+    var menu_data = [
+	{id: "males", icon: "mdi mdi-view-dashboard", value: "公猪"},
+	{id: "fenakes", icon: "mdi mdi-view-column", value:"母猪", data:[
+		{ id: "houbei", value: "后备"},
+		{ id: "peihuai", value: "配怀"},
+        { id: "chanfang", value: "产房"},
+		{ id: "cunlan", value: "存栏"}
+	]},
+    ];
 	webix.ready(function(){
 		webix.ui({
 			rows: [
@@ -83,6 +89,7 @@ $title = "漯河民社-TopFarm";
 					{
 						view: "sidebar",
 						data: menu_data,
+                        expand: true,
 						on:{
 							onAfterSelect: function(id){
 								initViz();
@@ -90,16 +97,14 @@ $title = "漯河民社-TopFarm";
 						}
 					},
 					{ 
-                        view: "iframe", 
-                        id:   "vizContainer" ,
-                        
+                        view: "template", 
+                        content: "vizContainer" 
                     }
 				]}
 			]
 		});
 	});
-
 </script>
+    <div id="vizContainer"></div>
 </body>
-
 </html>
