@@ -59,6 +59,12 @@ function pushSheetRowToHash( &$inProps ) {
     }
 }
 
+function isDuplicateMating( &$inProps, $preDate, $curDate ) {
+    $diffDays = diffInDays($preDate, $curDate);
+
+    return $diffDays >= -5 && $diffDays <= 5; 
+}
+
 function topfarmMain() {
     
     $inProps  = array();
@@ -105,30 +111,53 @@ function topfarmMain() {
         throw new Exception("配种表中耳号或日期信息有误。");
     }
 
+    $duplicateCount = 0;
     for ($row = 2; $row <= $inProps["curHighestRowIndex"]; ++$row) {
         $hashKey = $inProps["sheet"]->getCellByColumnAndRow($outProps["eartagIndex"], $row)->getValue();
-        $date    = $inProps["sheet"]->getCellByColumnAndRow($outProps["dateIndex"],   $row)->getValue();
+        $curDate    = $inProps["sheet"]->getCellByColumnAndRow($outProps["dateIndex"],   $row)->getValue();
 
         //5天内多次配种，只取一次做后续分析
+        $duplicateMating = false;
         if( array_key_exists($hashKey, $inProps["hashOfRows"]) ) {
-            $preDate  = $inProps["hashOfRows"][$hashKey];
-            $diffDays = diffInDays($preDate, $date);
+            $rowIndexOrArray  = $inProps["hashOfRows"][$hashKey];
+            if( is_array($rowIndexOrArray) ){
+                $num = count( $rowIndexOrArray ); 
+                for($idx = 0; $idx < $num; ++$idx){ 
+                    $preDate  = $inProps["sheet"]->getCellByColumnAndRow($outProps["dateIndex"], $rowIndexOrArray[$idx])->getValue();
+                    if( isDuplicateMating($inProps, $preDate, $curDate) ) {
+                        $duplicateMating = true;
+                        $duplicateCount++;
+                        break;
+                    }
+                }
+                if( ! $duplicateMating ){
+                    array_push($rowIndexOrArray, $row );
+                }
+            }
+            else {
+                $preDate  = $inProps["sheet"]->getCellByColumnAndRow($outProps["dateIndex"], $rowIndexOrArray)->getValue();
 
-            echo $hashKey, "重复耳号，配种时间相隔:", $diffDays, "\n";
-
-            if( $diffDays > -5 && $diffDays < 5 ) {
-                echo "===== Ignore This Record ======\n";
-                continue;
+                if( isDuplicateMating($inProps, $preDate, $curDate) ) {
+                    $duplicateMating = true;
+                    $duplicateCount++;
+                } 
+                else {
+                    $inProps["hashOfRows"][$hashKey] = [$rowIndexOrArray, $row];
+                }
             }
         }
         else {
-            $inProps["hashOfRows"][$hashKey] = $date;
+            $inProps["hashOfRows"][$hashKey] = $row;
         }
-
+        
+        if( $duplicateMating ) {
+            echo $hashKey, " 重复配种, 时间: ", $curDate, "\n";
+            continue;
+        }
+        
         for ($col = 1; $col <= $inProps["curHighestColIndex"]; ++$col) {
-
             $value = $inProps["sheet"]->getCellByColumnAndRow($col, $row)->getValue();
-            $outProps["sheet"]->setCellValueByColumnAndRow($col, $row, $value);
+            $outProps["sheet"]->setCellValueByColumnAndRow($col, $row - $duplicateCount, $value);
         }
     }
 
@@ -136,7 +165,6 @@ function topfarmMain() {
     $outProps["highestColIndex"]   = $inProps["curHighestColIndex"];
     
     $inProps["hashOfRows"]         = array();
-
 
     //处理“分娩”表
     $inProps["sheet"]              = $inSpreadsheet->getSheetByName("分娩");
