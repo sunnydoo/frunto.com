@@ -1,9 +1,5 @@
-
-page/component/pages/progress/progress.js
-page/component/pages/progress/progress.js
-page/component/pages/progress/progress.wxml
-page/component/pages/progress/progress.js
-page/component/pages/progress/progress.js
-page/component/pages/swinetools/swinetools.wxss
-js/custom.js
-*.php
+*.xlsx
+*.csv
+*.gitignore
+*.gitattributes
+*.DS_Store
