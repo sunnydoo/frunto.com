@@ -189,6 +189,37 @@ function saveMatingToOutSheet( &$inProps, &$outProps ) {
     }
 }
 
+function addBirthToOutSheet( &$inProps, &$outProps ) {
+    
+    $outSheet             = $outProps["sheet"];
+    $outHighestRowIndex   = $outProps["highestRowIndex"];
+    $outEartagIndex       = $outProps["eartagIndex"];
+    
+    $hashOfRows           = $inProps["hashOfRows"];
+    
+    for ($outRowIndex = 2; $outRowIndex <= $outHighestRowIndex; ++$outRowIndex) {
+
+        $key = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
+
+        if( ! array_key_exists($key, $hashOfRows) ){
+            continue;  //配种未分娩
+        }
+
+        $rowOrArray  = $hashOfRows[ $key ];
+
+        if( is_array($rowOrArray) ) {
+            $num = count( $rowOrArray ); 
+            for($idx = 0; $idx < $num; ++$idx){ 
+                $inRow = $rowOrArray[ $idx ];
+                appendBirthToMatingRowByDate($inProps, $outProps, $inRow, $outRowIndex);
+            }
+        }
+        else{
+            appendBirthToMatingRowByDate($inProps, $outProps, $rowOrArray, $outRowIndex);
+        }
+    }
+}
+
 function topfarmMain() {
     
     $debugStartTime = microtime(true);
@@ -209,39 +240,15 @@ function topfarmMain() {
     
     $debugStartNoIO = microtime(true);
 
-    
     $outProps["matingDateIndex"] = loadInSheetAndSetupProps("配种", $inProps, $outProps, true);
-    
     saveMatingToOutSheet($inProps, $outProps);
-    
     $outProps["highestRowIndex"]   = $outProps["sheet"]->getHighestRow();
     $outProps["highestColIndex"]   = $inProps["curHighestColIndex"];
     
     
     $outProps["birthDateIndex"]    = loadInSheetAndSetupProps("分娩", $inProps, $outProps);
     pushSheetRowToHash( $inProps );
-    for ($outRowIndex = 2; $outRowIndex <= $outProps["highestRowIndex"]; ++$outRowIndex) {
-
-        $key = $outProps["sheet"]->getCellByColumnAndRow($outProps["eartagIndex"], $outRowIndex)->getValue();
-
-        if( ! array_key_exists($key, $inProps["hashOfRows"]) ){
-            continue;  //配种未分娩
-        }
-
-        $rowOrArray  = $inProps["hashOfRows"][ $key ];
-
-        if( is_array($rowOrArray) ) {
-            $num = count( $rowOrArray ); 
-            for($idx = 0; $idx < $num; ++$idx){ 
-                $inRow = $rowOrArray[ $idx ];
-                appendBirthToMatingRowByDate($inProps, $outProps, $inRow, $outRowIndex);
-            }
-        }
-        else{
-            appendBirthToMatingRowByDate($inProps, $outProps, $rowOrArray, $outRowIndex);
-        }
-    }
-    
+    addBirthToOutSheet($inProps, $outProps);
     $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["curHighestColIndex"] - 1;
 
     $debugEndNoIO = microtime(true);
