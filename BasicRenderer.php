@@ -43,26 +43,24 @@ function hashOfRowIndexByEartag( &$props ) {
     $sheet             = $props["sheet"];
     $eartagIndex       = $props["eartagIndex"];
     $highestRowIndex   = $sheet->getHighestRow();
-    
-    $hashOfRows        = $props["hashOfRows"];
-    
+        
     for($rowIndex = 0; $rowIndex < $highestRowIndex; $rowIndex++) {
         
         $eartag = $sheet->getCellByColumnAndRow($eartagIndex, $rowIndex)->getValue();
 
-        if( array_key_exists($eartag, $hashOfRows) ){
+        if( array_key_exists($eartag, $props["hashOfRows"]) ){
             
-            $rowIndexOrArray = $hashOfRows[ $eartag ];
+            $rowIndexOrArray = $props["hashOfRows"][ $eartag ];
             
             if( is_array($rowIndexOrArray) ) {
                 array_push($rowIndexOrArray, $rowIndex);
             } 
             else {
-                $hashOfRows[ $eartag ] = [$rowIndexOrArray, $rowIndex];
+                $props["hashOfRows"][ $eartag ] = [$rowIndexOrArray, $rowIndex];
             }
         }
         else {
-            $hashOfRows[ $eartag ] = $rowIndex;
+            $props["hashOfRows"][ $eartag ] = $rowIndex;
         }
     }
 }
