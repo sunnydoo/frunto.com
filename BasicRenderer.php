@@ -18,7 +18,7 @@ function diffInDays($date1, $date2){
 function appendBirthToMatingRowByDate(&$inProps, &$outProps, $inRow, $outRowIndex){
     
     $birthDate  = $inProps["sheet"]->getCellByColumnAndRow($inProps["dateIndex"], $inRow->getRowIndex())->getValue();
-    $matingDate = $outProps["sheet"]->getCellByColumnAndRow($outProps["dateIndex"], $outRowIndex)->getValue();
+    $matingDate = $outProps["sheet"]->getCellByColumnAndRow($outProps["matingDateIndex"], $outRowIndex)->getValue();
         
     $diffDays  = diffInDays($matingDate, $birthDate);
         
@@ -67,6 +67,8 @@ function isDuplicateMating( &$inProps, $preDate, $curDate ) {
 
 function topfarmMain() {
     
+    $debugStartTime = microtime(true);
+
     $inProps  = array();
     $outProps = array();
 
@@ -76,9 +78,11 @@ function topfarmMain() {
 
     $reader = PhpOffice\PhpSpreadsheet\IOFactory::createReader("Xlsx");
     $reader->setReadDataOnly(true);
-    $reader->setLoadSheetsOnly(["配种", "分娩"]);
+    $reader->setLoadSheetsOnly(["配种", "分娩", "断奶"]);
     $inSpreadsheet = $reader->load("TemplateRecords.xlsx");
     $inProps["sheet"]    = $inSpreadsheet->getSheetByName("配种");
+    
+    $debugStartNoIO = microtime(true);
 
     //处理“配种”表
     $inProps["hashOfRows"]         = array();
@@ -87,13 +91,13 @@ function topfarmMain() {
     $inProps["curHighestColIndex"] = PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($inCurHighestColumn); 
 
     $outProps["eartagIndex"]       = -1;
-    $outProps["dateIndex"]         = -1;
+    $outProps["matingDateIndex"]         = -1;
 
     for ($col = 1; $col <= $inProps["curHighestColIndex"]; ++$col) {
         $value = $inProps["sheet"]->getCellByColumnAndRow($col, 1)->getValue();
         if( $value == "日期") {
             $value = "配种日期";
-            $outProps["dateIndex"] = $col;
+            $outProps["matingDateIndex"] = $col;
         }
 
         if( $value == "耳号"){
@@ -107,14 +111,14 @@ function topfarmMain() {
         $outProps["sheet"]->setCellValueByColumnAndRow($col, 1, $value);
     }
 
-    if( $outProps["eartagIndex"] < 0 or $outProps["dateIndex"] < 0) {
+    if( $outProps["eartagIndex"] < 0 or $outProps["matingDateIndex"] < 0) {
         throw new Exception("配种表中耳号或日期信息有误。");
     }
 
     $duplicateCount = 0;
     for ($row = 2; $row <= $inProps["curHighestRowIndex"]; ++$row) {
         $hashKey = $inProps["sheet"]->getCellByColumnAndRow($outProps["eartagIndex"], $row)->getValue();
-        $curDate    = $inProps["sheet"]->getCellByColumnAndRow($outProps["dateIndex"],   $row)->getValue();
+        $curDate    = $inProps["sheet"]->getCellByColumnAndRow($outProps["matingDateIndex"],   $row)->getValue();
 
         //5天内多次配种，只取一次做后续分析
         $duplicateMating = false;
@@ -123,7 +127,7 @@ function topfarmMain() {
             if( is_array($rowIndexOrArray) ){
                 $num = count( $rowIndexOrArray ); 
                 for($idx = 0; $idx < $num; ++$idx){ 
-                    $preDate  = $inProps["sheet"]->getCellByColumnAndRow($outProps["dateIndex"], $rowIndexOrArray[$idx])->getValue();
+                    $preDate  = $inProps["sheet"]->getCellByColumnAndRow($outProps["matingDateIndex"], $rowIndexOrArray[$idx])->getValue();
                     if( isDuplicateMating($inProps, $preDate, $curDate) ) {
                         $duplicateMating = true;
                         $duplicateCount++;
@@ -135,7 +139,7 @@ function topfarmMain() {
                 }
             }
             else {
-                $preDate  = $inProps["sheet"]->getCellByColumnAndRow($outProps["dateIndex"], $rowIndexOrArray)->getValue();
+                $preDate  = $inProps["sheet"]->getCellByColumnAndRow($outProps["matingDateIndex"], $rowIndexOrArray)->getValue();
 
                 if( isDuplicateMating($inProps, $preDate, $curDate) ) {
                     $duplicateMating = true;
@@ -151,7 +155,6 @@ function topfarmMain() {
         }
         
         if( $duplicateMating ) {
-            echo $hashKey, " 重复配种, 时间: ", $curDate, "\n";
             continue;
         }
         
@@ -176,10 +179,6 @@ function topfarmMain() {
 
     for ($col = 1; $col <= $inProps["curHighestColIndex"]; ++$col) {
         $value = $inProps["sheet"]->getCellByColumnAndRow($col, 1)->getValue();
-        if( $value == "日期") {
-            $value = "分娩日期";
-            $inProps["dateIndex"] = $col;
-        }
 
         if( $value == "耳号"){
             $inProps["eartagIndex"] = $col;
@@ -194,13 +193,20 @@ function topfarmMain() {
         if( $col > $inProps["eartagIndex"] && $inProps["eartagIndex"] > 0 ) {
             --$outIndex;
         }
+        
+        if( $value == "日期") {
+            $value = "分娩日期";
+            $inProps["dateIndex"] = $col;
+            $inProps["birthDateIndex"] = $outIndex;
+        }
+        
         $outProps["sheet"]->setCellValueByColumnAndRow($outIndex, 1, $value);
     }
-
+    
     if( $inProps["eartagIndex"] < 0 or $inProps["dateIndex"] < 0) {
         throw new Exception("分娩表中耳号或日期信息有误。");
     }
-
+    
     pushSheetRowToHash( $inProps );
     
     for ($outRowIndex = 2; $outRowIndex <= $outProps["highestRowIndex"]; ++$outRowIndex) {
@@ -224,12 +230,26 @@ function topfarmMain() {
             appendBirthToMatingRowByDate($inProps, $outProps, $rowOrArray, $outRowIndex);
         }
     }
+    
+    $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["curHighestColIndex"] - 1;
 
+    $debugEndNoIO = microtime(true);
+
+    
     $writer = PhpOffice\PhpSpreadsheet\IOFactory::createWriter($outSpreadsheet, "Xlsx");
 
     $outFilePath = "Processed.xlsx";
     $writer->save( $outFilePath );
-    echo "\nComplete TopFarmDataSource File: ", $outFilePath, "\n";
+    echo "\nComplete TopFarmDataSource File: ", $outFilePath;
+    
+    $debugEndTime = microtime(true);
+    
+    echo "\n文件共 ", $outProps["highestRowIndex"], " 行, ", $outProps["highestColIndex"], "列";
+    
+    echo "\n执行时间：", round($debugEndTime - $debugStartTime, 3), "秒";
+    echo "\n不计算IO的执行时间：", round($debugEndNoIO - $debugStartNoIO, 3), "秒\n";
+    
+
     
 }
 
