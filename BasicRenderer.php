@@ -128,6 +128,66 @@ function loadInSheetAndSetupProps($sheetName, &$inProps, &$outProps, $firstEarta
     return $dateColumnIndex;
 }
 
+function saveMatingToOutSheet( &$inProps, &$outProps ) {
+    
+    $inHighestRowIndex = $inProps["curHighestRowIndex"];
+    $inSheet           = $inProps["sheet"];
+    $inEartagIndex     = $inProps["eartagIndex"];
+    $inDateIndex       = $inProps["dateIndex"];
+    $hashOfRows        = $inProps["hashOfRows"];
+    $inHighestColIndex = $inProps["curHighestColIndex"];
+        
+    $outSheet          = $outProps["sheet"];
+    
+    $duplicateCount = 0;
+    for ($row = 2; $row <= $inHighestRowIndex; ++$row) {
+        $hashKey = $inSheet->getCellByColumnAndRow( $inEartagIndex, $row)->getValue();
+        $curDate = $inSheet->getCellByColumnAndRow( $inDateIndex,   $row)->getValue();
+
+        //5天内多次配种，只取一次做后续分析
+        $duplicateMating = false;
+        if( array_key_exists($hashKey, $hashOfRows) ) {
+            $rowIndexOrArray  = $hashOfRows[$hashKey];
+            if( is_array($rowIndexOrArray) ){
+                $num = count( $rowIndexOrArray ); 
+                for($idx = 0; $idx < $num; ++$idx){ 
+                    $preDate  = $inSheet->getCellByColumnAndRow($inDateIndex, $rowIndexOrArray[$idx])->getValue();
+                    if( isDuplicateMating($inProps, $preDate, $curDate) ) {
+                        $duplicateMating = true;
+                        $duplicateCount++;
+                        break;
+                    }
+                }
+                if( ! $duplicateMating ){
+                    array_push($rowIndexOrArray, $row );
+                }
+            }
+            else {
+                $preDate  = $inSheet->getCellByColumnAndRow($inDateIndex, $rowIndexOrArray)->getValue();
+
+                if( isDuplicateMating($inProps, $preDate, $curDate) ) {
+                    $duplicateMating = true;
+                    $duplicateCount++;
+                } 
+                else {
+                    $hashOfRows[$hashKey] = [$rowIndexOrArray, $row];
+                }
+            }
+        }
+        else {
+            $hashOfRows[$hashKey] = $row;
+        }
+        
+        if( $duplicateMating ) {
+            continue;
+        }
+        
+        for ($col = 1; $col <= $inHighestColIndex; ++$col) {
+            $value = $inSheet->getCellByColumnAndRow($col, $row)->getValue();
+            $outSheet->setCellValueByColumnAndRow($col, $row - $duplicateCount, $value);
+        }
+    }
+}
 
 function topfarmMain() {
     
@@ -149,64 +209,17 @@ function topfarmMain() {
     
     $debugStartNoIO = microtime(true);
 
+    
     $outProps["matingDateIndex"] = loadInSheetAndSetupProps("配种", $inProps, $outProps, true);
-
-    $duplicateCount = 0;
-    for ($row = 2; $row <= $inProps["curHighestRowIndex"]; ++$row) {
-        $hashKey = $inProps["sheet"]->getCellByColumnAndRow($outProps["eartagIndex"], $row)->getValue();
-        $curDate    = $inProps["sheet"]->getCellByColumnAndRow($outProps["matingDateIndex"],   $row)->getValue();
-
-        //5天内多次配种，只取一次做后续分析
-        $duplicateMating = false;
-        if( array_key_exists($hashKey, $inProps["hashOfRows"]) ) {
-            $rowIndexOrArray  = $inProps["hashOfRows"][$hashKey];
-            if( is_array($rowIndexOrArray) ){
-                $num = count( $rowIndexOrArray ); 
-                for($idx = 0; $idx < $num; ++$idx){ 
-                    $preDate  = $inProps["sheet"]->getCellByColumnAndRow($outProps["matingDateIndex"], $rowIndexOrArray[$idx])->getValue();
-                    if( isDuplicateMating($inProps, $preDate, $curDate) ) {
-                        $duplicateMating = true;
-                        $duplicateCount++;
-                        break;
-                    }
-                }
-                if( ! $duplicateMating ){
-                    array_push($rowIndexOrArray, $row );
-                }
-            }
-            else {
-                $preDate  = $inProps["sheet"]->getCellByColumnAndRow($outProps["matingDateIndex"], $rowIndexOrArray)->getValue();
-
-                if( isDuplicateMating($inProps, $preDate, $curDate) ) {
-                    $duplicateMating = true;
-                    $duplicateCount++;
-                } 
-                else {
-                    $inProps["hashOfRows"][$hashKey] = [$rowIndexOrArray, $row];
-                }
-            }
-        }
-        else {
-            $inProps["hashOfRows"][$hashKey] = $row;
-        }
-        
-        if( $duplicateMating ) {
-            continue;
-        }
-        
-        for ($col = 1; $col <= $inProps["curHighestColIndex"]; ++$col) {
-            $value = $inProps["sheet"]->getCellByColumnAndRow($col, $row)->getValue();
-            $outProps["sheet"]->setCellValueByColumnAndRow($col, $row - $duplicateCount, $value);
-        }
-    }
-
+    
+    saveMatingToOutSheet($inProps, $outProps);
+    
     $outProps["highestRowIndex"]   = $outProps["sheet"]->getHighestRow();
     $outProps["highestColIndex"]   = $inProps["curHighestColIndex"];
     
+    
     $outProps["birthDateIndex"]    = loadInSheetAndSetupProps("分娩", $inProps, $outProps);
-    
     pushSheetRowToHash( $inProps );
-    
     for ($outRowIndex = 2; $outRowIndex <= $outProps["highestRowIndex"]; ++$outRowIndex) {
 
         $key = $outProps["sheet"]->getCellByColumnAndRow($outProps["eartagIndex"], $outRowIndex)->getValue();
