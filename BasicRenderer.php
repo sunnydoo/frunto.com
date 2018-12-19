@@ -307,11 +307,12 @@ function addWeaningToOutSheet( &$inProps, &$outProps){
 
         $rowIndexOrArray  = $inProps["hashOfRows"][ $eartag ];
         
+        // 配种未分娩，分娩日期为空
         $birthDate = $outProps["sheet"]->getCellByColumnAndRow($outBirthDateIndex, $outRowIndex)->getValue();
-        if( gettype( $birthDate ) != 'string' ) {
+        if( ! $birthDate ) {
             continue;
         }
-        
+                
         if( is_array($rowIndexOrArray) ) {
             $num = count( $rowIndexOrArray ); 
             for($idx = 0; $idx < $num; ++$idx){ 
@@ -354,6 +355,59 @@ function addBirthToOutSheet( &$inProps, &$outProps ) {
     }
 }
 
+function addPregnantCheckToOutSheet( &$inProps, &$outProps){ 
+    $outSheet             = $outProps["sheet"];
+    $outHighestRowIndex   = $outProps["highestRowIndex"];
+    $outEartagIndex       = $outProps["eartagIndex"];
+    $outBirthDateIndex    = $outProps["birthDateIndex"];
+    $outMatingDateIndex   = $outProps["matingDateIndex"];
+
+        
+    for ($outRowIndex = 2; $outRowIndex <= $outHighestRowIndex; ++$outRowIndex) {
+
+        $eartag = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
+        
+        
+        if( ! array_key_exists($eartag, $inProps["hashOfRows"]) ){
+            continue;  //配种后无孕检
+        }
+
+        $rowIndexOrArray  = $inProps["hashOfRows"][ $eartag ];
+        
+        if( is_array($rowIndexOrArray) ) {
+            $num = count( $rowIndexOrArray ); 
+            for($idx = 0; $idx < $num; ++$idx){ 
+                $rowIndex = $rowIndexOrArray[ $idx ];
+                appendPregnantCheckToMatingRowByDate($inProps, $outProps, $rowIndex, $outRowIndex);
+            }
+        }
+        else{
+            appendPregnantCheckToMatingRowByDate($inProps, $outProps, $rowIndexOrArray, $outRowIndex);
+        }
+    }
+}
+
+function appendPregnantCheckToMatingRowByDate(&$inProps, &$outProps, $rowIndex, $outRowIndex){
+    
+    $pregnantCheckDate = $inProps["sheet"]->getCellByColumnAndRow($inProps["dateIndex"], $rowIndex)->getValue();
+    $matingDate        = $outProps["sheet"]->getCellByColumnAndRow($outProps["matingDateIndex"], $outRowIndex)->getValue();
+        
+    $diffDays  = diffInDays($matingDate, $pregnantCheckDate);
+        
+    if($diffDays > 0 and $diffDays < 125 ){
+        for ($col = 1; $col <= $inProps["highestColIndex"]; ++$col) {
+            if($col != $inProps["eartagIndex"]) {
+                $value = $inProps["sheet"]->getCellByColumnAndRow($col, $rowIndex)->getValue();
+                $outIndexToInsert = $outProps["highestColIndex"] + $col;
+                if($col > $inProps["eartagIndex"]) {
+                    $outIndexToInsert--;
+                }
+                $outProps["sheet"]->setCellValueByColumnAndRow($outIndexToInsert, $outRowIndex, $value);
+            }
+        }
+    }
+}
+
 function topfarmMain() {
     
     $debugStartTime = microtime(true);
@@ -367,7 +421,7 @@ function topfarmMain() {
 
     $reader = PhpOffice\PhpSpreadsheet\IOFactory::createReader("Xlsx");
     $reader->setReadDataOnly(true);
-    $reader->setLoadSheetsOnly(["配种", "分娩", "断奶"]);
+    $reader->setLoadSheetsOnly(["配种", "分娩", "断奶", "孕检"]);
     
     $inSpreadsheet          = $reader->load("TemplateRecords.xlsx");
     $inProps["spreadsheet"] = $inSpreadsheet;
@@ -380,14 +434,19 @@ function topfarmMain() {
     $outProps["highestColIndex"]   = $inProps["highestColIndex"];
     
     
-    $outProps["birthDateIndex"]    = loadInSheetAndSetupProps("分娩", $inProps, $outProps);
+    $outProps["birthDateIndex"] = loadInSheetAndSetupProps("分娩", $inProps, $outProps);
     hashOfRowIndexByEartag( $inProps );
     addBirthToOutSheet($inProps, $outProps);
     $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["highestColIndex"] - 1;
     
-    $outProps["weanDateIndex"]    = loadInSheetAndSetupProps("断奶", $inProps, $outProps);
+    $outProps["weaningDateIndex"] = loadInSheetAndSetupProps("断奶", $inProps, $outProps);
     hashOfRowIndexByEartag( $inProps );
     addWeaningToOutSheet($inProps, $outProps);
+    $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["highestColIndex"] - 1;
+
+    $outProps["pregnantCheckDateIndex"] = loadInSheetAndSetupProps("孕检", $inProps, $outProps);
+    hashOfRowIndexByEartag( $inProps );
+    addPregnantCheckToOutSheet($inProps, $outProps);
     $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["highestColIndex"] - 1;
 
     $debugEndNoIO = microtime(true);
