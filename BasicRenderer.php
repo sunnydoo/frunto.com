@@ -6,13 +6,36 @@ require 'vendor/autoload.php';
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
-function diffInDays($date1, $date2){
-    $date1 = date_create_from_format("y/m/d", $date1);
-    $date2 = date_create_from_format("y/m/d", $date2);
+function diffInDays($date1, $date2){  
+    
+    $formatDate = function( $rawDate ) {
+        $excelInteger = function( $intDate ) {
+            $date = FALSE;
 
-    $diff  = date_diff($date1, $date2);
+            if( gettype( $intDate ) == 'integer' or gettype( $intDate ) == 'double' ) {
+                $date = date_create_from_format("Y-m-d", "1900-1-1");
+                $intDate -= 2; //不知原因，PHP比Excel计算的日期多2天。
+                $date->add(new DateInterval('P'.$intDate.'D'));
+            }
+
+            return $date;
+        };
+
+        $date = ($date = date_create_from_format("y/m/d", $rawDate)) ? $date :
+                ($date = date_create_from_format("Y/m/d", $rawDate)) ? $date :
+                ($date = date_create_from_format("y-m-d", $rawDate)) ? $date :
+                ($date = date_create_from_format("Y-m-d", $rawDate)) ? $date :
+                ($date = $excelInteger($rawDate));
+
+
+        return $date;
+    };    
+    
+    //use Lambda function as inline, to save the function call cost.
+    $diff  = date_diff( $formatDate( $date1 ), $formatDate( $date2 ));
     
     return $diff->format("%r%a");
+    
 }
 
 function appendBirthToMatingRowByDate(&$inProps, &$outProps, $rowIndex, $outRowIndex){
@@ -34,6 +57,28 @@ function appendBirthToMatingRowByDate(&$inProps, &$outProps, $rowIndex, $outRowI
                 $outProps["sheet"]->setCellValueByColumnAndRow($outIndexToInsert, $outRowIndex, $value);
             }
             
+        }
+    }
+}
+
+function appendWeaningToMatingRowByDate(&$inProps, &$outProps, $rowIndex, $outRowIndex){
+    
+    $weaningDate  = $inProps["sheet"]->getCellByColumnAndRow($inProps["dateIndex"], $rowIndex)->getValue();
+    $birthDate = $outProps["sheet"]->getCellByColumnAndRow($outProps["birthDateIndex"], $outRowIndex)->getValue();
+        
+    $diffDays  = diffInDays($birthDate, $weaningDate);
+        
+    if($diffDays > 0 and $diffDays < 60 ){
+        for ($col = 1; $col <= $inProps["highestColIndex"]; ++$col) {
+            if($col != $inProps["eartagIndex"]) {
+                $value = $inProps["sheet"]->getCellByColumnAndRow($col, $rowIndex)->getValue();
+                $outIndexToInsert = $outProps["highestColIndex"] + $col;
+                //“分娩”表中耳号没有插入
+                if($col > $inProps["eartagIndex"]) {
+                    $outIndexToInsert--;
+                }
+                $outProps["sheet"]->setCellValueByColumnAndRow($outIndexToInsert, $outRowIndex, $value);
+            }
         }
     }
 }
@@ -140,7 +185,6 @@ function addMatingToOutSheet( &$inProps, &$outProps ) {
     $inSheet           = $inProps["sheet"];
     $inEartagIndex     = $inProps["eartagIndex"];
     $inDateIndex       = $inProps["dateIndex"];
-    $hashOfRows        = $inProps["hashOfRows"];
     $inHighestColIndex = $inProps["highestColIndex"];
         
     $outSheet          = $outProps["sheet"];
@@ -152,8 +196,8 @@ function addMatingToOutSheet( &$inProps, &$outProps ) {
 
         //5天内多次配种，只取一次做后续分析
         $duplicateMating = false;
-        if( array_key_exists($hashKey, $hashOfRows) ) {
-            $rowIndexOrArray  = $hashOfRows[$hashKey];
+        if( array_key_exists($hashKey, $inProps["hashOfRows"]) ) {
+            $rowIndexOrArray  = $inProps["hashOfRows"][$hashKey];
             if( is_array($rowIndexOrArray) ){
                 $num = count( $rowIndexOrArray ); 
                 for($idx = 0; $idx < $num; ++$idx){ 
@@ -176,12 +220,12 @@ function addMatingToOutSheet( &$inProps, &$outProps ) {
                     $duplicateCount++;
                 } 
                 else {
-                    $hashOfRows[$hashKey] = [$rowIndexOrArray, $row];
+                    $inProps["hashOfRows"][$hashKey] = [$rowIndexOrArray, $row];
                 }
             }
         }
         else {
-            $hashOfRows[$hashKey] = $row;
+            $inProps["hashOfRows"][$hashKey] = $row;
         }
         
         if( $duplicateMating ) {
@@ -246,23 +290,56 @@ function addMatingToOutSheetV2( &$inProps, &$outProps ) {
     }
 }
 
+function addWeaningToOutSheet( &$inProps, &$outProps){ 
+    $outSheet             = $outProps["sheet"];
+    $outHighestRowIndex   = $outProps["highestRowIndex"];
+    $outEartagIndex       = $outProps["eartagIndex"];
+    $outBirthDateIndex    = $outProps["birthDateIndex"];
+        
+    for ($outRowIndex = 2; $outRowIndex <= $outHighestRowIndex; ++$outRowIndex) {
+
+        $eartag = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
+        
+        
+        if( ! array_key_exists($eartag, $inProps["hashOfRows"]) ){
+            continue;  //配种后无断奶
+        }
+
+        $rowIndexOrArray  = $inProps["hashOfRows"][ $eartag ];
+        
+        $birthDate = $outProps["sheet"]->getCellByColumnAndRow($outBirthDateIndex, $outRowIndex)->getValue();
+        if( gettype( $birthDate ) != 'string' ) {
+            continue;
+        }
+        
+        if( is_array($rowIndexOrArray) ) {
+            $num = count( $rowIndexOrArray ); 
+            for($idx = 0; $idx < $num; ++$idx){ 
+                $rowIndex = $rowIndexOrArray[ $idx ];
+                appendWeaningToMatingRowByDate($inProps, $outProps, $rowIndex, $outRowIndex);
+            }
+        }
+        else{
+            appendWeaningToMatingRowByDate($inProps, $outProps, $rowIndexOrArray, $outRowIndex);
+        }
+    }
+}
+
 function addBirthToOutSheet( &$inProps, &$outProps ) {
     
     $outSheet             = $outProps["sheet"];
     $outHighestRowIndex   = $outProps["highestRowIndex"];
     $outEartagIndex       = $outProps["eartagIndex"];
-    
-    $hashOfRows           = $inProps["hashOfRows"];
-    
+        
     for ($outRowIndex = 2; $outRowIndex <= $outHighestRowIndex; ++$outRowIndex) {
 
         $key = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
 
-        if( ! array_key_exists($key, $hashOfRows) ){
+        if( ! array_key_exists($key, $inProps["hashOfRows"]) ){
             continue;  //配种未分娩
         }
 
-        $rowIndexOrArray  = $hashOfRows[ $key ];
+        $rowIndexOrArray  = $inProps["hashOfRows"][ $key ];
 
         if( is_array($rowIndexOrArray) ) {
             $num = count( $rowIndexOrArray ); 
@@ -306,6 +383,11 @@ function topfarmMain() {
     $outProps["birthDateIndex"]    = loadInSheetAndSetupProps("分娩", $inProps, $outProps);
     hashOfRowIndexByEartag( $inProps );
     addBirthToOutSheet($inProps, $outProps);
+    $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["highestColIndex"] - 1;
+    
+    $outProps["weanDateIndex"]    = loadInSheetAndSetupProps("断奶", $inProps, $outProps);
+    hashOfRowIndexByEartag( $inProps );
+    addWeaningToOutSheet($inProps, $outProps);
     $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["highestColIndex"] - 1;
 
     $debugEndNoIO = microtime(true);
