@@ -195,6 +195,57 @@ function addMatingToOutSheet( &$inProps, &$outProps ) {
     }
 }
 
+//统一使用先Hash，然后再去重复的方法，结果总是出错
+//等将来有带宽的时候再优化
+function addMatingToOutSheetV2( &$inProps, &$outProps ) {
+    $inSheet           = $inProps["sheet"];
+    $outSheet          = $outProps["sheet"];
+
+    $inDateIndex       = $inProps["dateIndex"];
+    $inHighestColIndex = $inProps["highestColIndex"];
+        
+    hashOfRowIndexByEartag( $inProps );
+    
+    $outRowIndex = 2;
+    foreach( $inProps["hashOfRows"] as $eartag=>$rowIndexOrArray ) {
+        if( is_array( $rowIndexOrArray )) {
+            
+            $num = count( $rowIndexOrArray );
+            
+            $dateArray = array();
+            for($idx = 0; $idx < $num; ++$idx){ 
+                $date = $inSheet->getCellByColumnAndRow($inDateIndex, $rowIndexOrArray[$idx])->getValue(); 
+                $dateArray[$idx] = $date;
+            }
+                        
+            for($cur = 0; $cur < $num; ++$cur){ 
+                $duplicateMating = false;
+                for($pre = $cur + 1; $pre < $num; ++$pre ) {
+                    
+                    $diffDays = diffInDays($dateArray[$pre], $dateArray[$cur]);
+
+                    if( $diffDays >= -5 && $diffDays <= 5 ) {
+                        $duplicateMating = true;  
+                        break;
+                    }
+                }
+                if( ! $duplicateMating ) {
+                    for ($col = 1; $col <= $inHighestColIndex; ++$col) {
+                        $value = $inSheet->getCellByColumnAndRow($col, $rowIndexOrArray[$cur])->getValue();
+                        $outSheet->setCellValueByColumnAndRow($col, $outRowIndex++, $value);
+                    }
+                }
+            }
+        } 
+        else {
+            for ($col = 1; $col <= $inHighestColIndex; ++$col) {
+                $value = $inSheet->getCellByColumnAndRow($col, $rowIndexOrArray)->getValue();
+                $outSheet->setCellValueByColumnAndRow($col, $outRowIndex++, $value);
+            }
+        }
+    }
+}
+
 function addBirthToOutSheet( &$inProps, &$outProps ) {
     
     $outSheet             = $outProps["sheet"];
