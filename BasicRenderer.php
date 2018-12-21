@@ -131,6 +131,11 @@ function loadInSheetAndSetupProps($sheetName, &$inProps, &$outProps, $firstEarta
     $outSheet = $outProps["sheet"];
     
     $inProps["highestRowIndex"] = $inSheet->getHighestRow();   //3, 4
+    
+    if( ! array_key_exists( "highestRowIndex", $outProps)) {
+        $outProps["highestRowIndex"] = $inProps["highestRowIndex"];
+    }
+    
     $inCurHighestColumn         = $inSheet->getHighestColumn(); 
     $inProps["highestColIndex"] = PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($inCurHighestColumn); 
 
@@ -163,6 +168,13 @@ function loadInSheetAndSetupProps($sheetName, &$inProps, &$outProps, $firstEarta
             $value                = $sheetName."日期";
             $inProps["dateIndex"] = $col;                          //6
             $dateColumnIndex      = $outIndex;
+            
+            $colString = PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex( $dateColumnIndex );
+            $coordinates = $colString."2:".$colString.$outProps["highestRowIndex"]; //like "M1:M128"
+            
+            $outSheet->getStyle( $coordinates )
+                     ->getNumberFormat()
+                     ->setFormatCode( PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_DATE_YYYYMMDD );
         }
 
         $outSheet->setCellValueByColumnAndRow($outIndex, 1, $value);
