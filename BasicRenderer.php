@@ -408,6 +408,74 @@ function appendPregnantCheckToMatingRowByDate(&$inProps, &$outProps, $rowIndex, 
     }
 }
 
+function addLeaveToOutSheet( &$inProps, &$outProps){ 
+    $outSheet             = $outProps["sheet"];
+    $outHighestRowIndex   = $outProps["highestRowIndex"];
+    $outEartagIndex       = $outProps["eartagIndex"];
+        
+    for ($outRowIndex = 2; $outRowIndex <= $outHighestRowIndex; ++$outRowIndex) {
+
+        $eartag = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
+        
+        if( ! array_key_exists($eartag, $inProps["hashOfRows"]) ){
+            continue;  
+        }
+
+        //离场只可能出现一次，如有重复记录，只取一次，忽略其他记录。
+        $rowIndex  = $inProps["hashOfRows"][ $eartag ];
+        if( is_array($rowIndex) ) {
+            $rowIndex = $rowIndex[0];
+        }
+        
+        for ($col = 1; $col <= $inProps["highestColIndex"]; ++$col) {
+            if($col != $inProps["eartagIndex"]) {
+                $value = $inProps["sheet"]->getCellByColumnAndRow($col, $rowIndex)->getValue();
+                $outIndexToInsert = $outProps["highestColIndex"] + $col;
+                //“分娩”表中耳号没有插入
+                if($col > $inProps["eartagIndex"]) {
+                    $outIndexToInsert--;
+                }
+                $outProps["sheet"]->setCellValueByColumnAndRow($outIndexToInsert, $outRowIndex, $value);
+            }  
+        }   
+    }
+}
+
+function addEntryToOutSheet($inProps, $outProps) {
+    $outSheet             = $outProps["sheet"];
+    $outHighestRowIndex   = $outProps["highestRowIndex"];
+    $outEartagIndex       = $outProps["eartagIndex"];
+        
+    for ($outRowIndex = 2; $outRowIndex <= $outHighestRowIndex; ++$outRowIndex) {
+
+        $eartag = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
+        
+        if( ! array_key_exists($eartag, $inProps["hashOfRows"]) ){
+            continue;  
+        }
+
+        //进群只可能出现一次，如有重复记录，只取一次，忽略其他记录。
+        $rowIndex  = $inProps["hashOfRows"][ $eartag ];
+        if( is_array($rowIndex) ) {
+            $rowIndex = $rowIndex[0];
+        }
+        
+        for ($col = 1; $col <= $inProps["highestColIndex"]; ++$col) {
+            if($col != $inProps["eartagIndex"]) {
+                $value = $inProps["sheet"]->getCellByColumnAndRow($col, $rowIndex)->getValue();
+                $outIndexToInsert = $outProps["highestColIndex"] + $col;
+                //“分娩”表中耳号没有插入
+                if($col > $inProps["eartagIndex"]) {
+                    $outIndexToInsert--;
+                }
+                $outProps["sheet"]->setCellValueByColumnAndRow($outIndexToInsert, $outRowIndex, $value);
+            }  
+        }   
+
+    }
+}
+
+
 function topfarmMain() {
     
     $debugStartTime = microtime(true);
@@ -421,7 +489,7 @@ function topfarmMain() {
 
     $reader = PhpOffice\PhpSpreadsheet\IOFactory::createReader("Xlsx");
     $reader->setReadDataOnly(true);
-    $reader->setLoadSheetsOnly(["配种", "分娩", "断奶", "孕检"]);
+    $reader->setLoadSheetsOnly(["配种", "分娩", "断奶", "孕检", "离场", "进群"]);
     
     $inSpreadsheet          = $reader->load("TemplateRecords.xlsx");
     $inProps["spreadsheet"] = $inSpreadsheet;
@@ -449,6 +517,17 @@ function topfarmMain() {
     addPregnantCheckToOutSheet($inProps, $outProps);
     $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["highestColIndex"] - 1;
 
+    $outProps["leaveDateIndex"] = loadInSheetAndSetupProps("离场", $inProps, $outProps);
+    hashOfRowIndexByEartag( $inProps );
+    addLeaveToOutSheet($inProps, $outProps);
+    $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["highestColIndex"] - 1;
+    
+    $outProps["entryDateIndex"] = loadInSheetAndSetupProps("进群", $inProps, $outProps);
+    hashOfRowIndexByEartag( $inProps );
+    addEntryToOutSheet($inProps, $outProps);
+    $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["highestColIndex"] - 1;
+    
+    
     $debugEndNoIO = microtime(true);
 
     
@@ -464,9 +543,6 @@ function topfarmMain() {
     
     echo "\n执行时间：", round($debugEndTime - $debugStartTime, 3), "秒";
     echo "\n不计算IO的执行时间：", round($debugEndNoIO - $debugStartNoIO, 3), "秒\n";
-    
-
-    
 }
 
 // === Start of Main Execution === //
