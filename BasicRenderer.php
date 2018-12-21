@@ -89,19 +89,17 @@ function hashOfRowIndexByEartag( &$props ) {
     $eartagIndex       = $props["eartagIndex"];
     $highestRowIndex   = $sheet->getHighestRow();
     
+    $count = 1;
     for($rowIndex = 2; $rowIndex <= $highestRowIndex; $rowIndex++) {
         
         $eartag = $sheet->getCellByColumnAndRow($eartagIndex, $rowIndex)->getValue();
 
-        if( array_key_exists($eartag, $props["hashOfRows"]) ){
-            
-            $rowIndexOrArray = $props["hashOfRows"][ $eartag ];
-            
-            if( is_array($rowIndexOrArray) ) {
-                array_push($rowIndexOrArray, $rowIndex);
+        if( array_key_exists($eartag, $props["hashOfRows"]) ){            
+            if( is_array( $props["hashOfRows"][ $eartag ] ) ) {
+                array_push($props["hashOfRows"][ $eartag ], $rowIndex);
             } 
             else {
-                $props["hashOfRows"][ $eartag ] = [$rowIndexOrArray, $rowIndex];
+                $props["hashOfRows"][ $eartag ] = [$props["hashOfRows"][ $eartag ], $rowIndex];
             }
         }
         else {
@@ -262,21 +260,34 @@ function addMatingToOutSheetV2( &$inProps, &$outProps ) {
         
     hashOfRowIndexByEartag( $inProps );
     
+    $appendMaitingRowByDate = function($inSheet, $outSheet, $inRowIndex, &$outRowIndex, $inHighestColIndex) {
+        for ($col = 1; $col <= $inHighestColIndex; ++$col) {
+            $value = $inSheet->getCellByColumnAndRow($col, $inRowIndex)->getValue();
+            $outSheet->setCellValueByColumnAndRow($col, $outRowIndex , $value);
+        }
+        $outRowIndex++;
+    };
+    
     $outRowIndex = 2;
     foreach( $inProps["hashOfRows"] as $eartag=>$rowIndexOrArray ) {
+
         if( is_array( $rowIndexOrArray )) {
             
-            $num = count( $rowIndexOrArray );
-            
+            $num       = count( $rowIndexOrArray );
             $dateArray = array();
+                    
             for($idx = 0; $idx < $num; ++$idx){ 
                 $date = $inSheet->getCellByColumnAndRow($inDateIndex, $rowIndexOrArray[$idx])->getValue(); 
                 $dateArray[$idx] = $date;
             }
-                        
-            for($cur = 0; $cur < $num; ++$cur){ 
-                $duplicateMating = false;
-                for($pre = $cur + 1; $pre < $num; ++$pre ) {
+            
+            // 先存入第一个
+            $appendMaitingRowByDate($inSheet, $outSheet, $rowIndexOrArray[0], $outRowIndex, $inHighestColIndex);
+            
+            for($cur = 1; $cur < $num; ++$cur){ 
+                
+                $duplicateMating = false;    
+                for($pre = 0; $pre < $cur; ++$pre ) {
                     
                     $diffDays = diffInDays($dateArray[$pre], $dateArray[$cur]);
 
@@ -286,18 +297,12 @@ function addMatingToOutSheetV2( &$inProps, &$outProps ) {
                     }
                 }
                 if( ! $duplicateMating ) {
-                    for ($col = 1; $col <= $inHighestColIndex; ++$col) {
-                        $value = $inSheet->getCellByColumnAndRow($col, $rowIndexOrArray[$cur])->getValue();
-                        $outSheet->setCellValueByColumnAndRow($col, $outRowIndex++, $value);
-                    }
+                    $appendMaitingRowByDate($inSheet, $outSheet, $rowIndexOrArray[ $cur ], $outRowIndex, $inHighestColIndex);
                 }
             }
         } 
         else {
-            for ($col = 1; $col <= $inHighestColIndex; ++$col) {
-                $value = $inSheet->getCellByColumnAndRow($col, $rowIndexOrArray)->getValue();
-                $outSheet->setCellValueByColumnAndRow($col, $outRowIndex++, $value);
-            }
+            $appendMaitingRowByDate($inSheet, $outSheet, $rowIndexOrArray, $outRowIndex, $inHighestColIndex);
         }
     }
 }
@@ -509,10 +514,9 @@ function topfarmMain() {
     $debugStartNoIO = microtime(true);
 
     $outProps["matingDateIndex"] = loadInSheetAndSetupProps("配种", $inProps, $outProps, true);
-    addMatingToOutSheet($inProps, $outProps);
+    addMatingToOutSheetV2($inProps, $outProps);
     $outProps["highestRowIndex"]   = $outProps["sheet"]->getHighestRow();
     $outProps["highestColIndex"]   = $inProps["highestColIndex"];
-    
     
     $outProps["birthDateIndex"] = loadInSheetAndSetupProps("分娩", $inProps, $outProps);
     hashOfRowIndexByEartag( $inProps );
