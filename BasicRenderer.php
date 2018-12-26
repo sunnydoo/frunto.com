@@ -139,9 +139,18 @@ function loadInSheetAndSetupProps($sheetName, &$inProps, &$outProps, $firstEarta
 
     $dateColumnIndex        = -1; 
     $inProps["eartagIndex"] = -1;
+    
+    if( $firstEartagInsert ) {
+        $outProps["baseTableHeader"] = array();
+    }
+    
     for ($col = 1; $col <= $inProps["highestColIndex"]; ++$col) {
         
         $value = $inSheet->getCellByColumnAndRow($col, 1)->getValue();
+        
+        if( $firstEartagInsert ) {
+            array_push($outProps["baseTableHeader"], $value);
+        }
 
         if( $value == "耳号" ){
             $inProps["eartagIndex"]  = $col;                      // 5
@@ -186,7 +195,44 @@ function loadInSheetAndSetupProps($sheetName, &$inProps, &$outProps, $firstEarta
     $inProps["sheet"]      = $inSheet;                          //2
     $inProps["hashOfRows"] = array();                           //7
     
+    if( $firstEartagInsert ) {
+       $outProps["baseSheet"] = &$inSheet;
+    }
+    
     return $dateColumnIndex;
+}
+
+function addMatingNextCycleHeader(&$inProps, &$outProps ) {
+
+    $num = count($outProps["baseTableHeader"]);
+    
+    $inProps["eartagIndex"] = -1;
+    for ($col = 0; $col < $num; ++$col) {
+        
+        $value = $outProps["baseTableHeader"][$col];
+        
+        if( $value == "耳号" ){
+            $inProps["eartagIndex"]  = $col;                      
+            continue;
+        }
+
+        if( $value == "备注"){
+            $value ="再配备注";
+        }
+        
+        $outIndex = $col;
+        $outIndex += $outProps["highestColIndex"];
+        if( $inProps["eartagIndex"] > 0 && $col > $inProps["eartagIndex"] ) {
+            --$outIndex;
+        }
+        
+        if( $value == "日期") {
+            $value                = "再配日期";
+            $inProps["dateIndex"] = $col;                          //6
+        }
+
+        $outProps["sheet"]->setCellValueByColumnAndRow($outIndex, 1, $value);
+    }
 }
 
 function addMatingToOutSheet( &$inProps, &$outProps ) {
@@ -517,6 +563,7 @@ function topfarmMain() {
     addMatingToOutSheetV2($inProps, $outProps);
     $outProps["highestRowIndex"]   = $outProps["sheet"]->getHighestRow();
     $outProps["highestColIndex"]   = $inProps["highestColIndex"];
+    $outProps["hashOfRows"]        = &$inProps["hashOfRows"];
     
     $outProps["birthDateIndex"] = loadInSheetAndSetupProps("分娩", $inProps, $outProps);
     hashOfRowIndexByEartag( $inProps );
@@ -543,6 +590,7 @@ function topfarmMain() {
     addEntryToOutSheet($inProps, $outProps);
     $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["highestColIndex"] - 1;
     
+    addMatingNextCycleHeader($inProps, $outProps);
     
     $debugEndNoIO = microtime(true);
 
