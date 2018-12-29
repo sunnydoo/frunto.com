@@ -191,28 +191,24 @@ function loadInSheetAndSetupProps($sheetName, &$inProps, &$outProps, $firstEarta
         $errorMessage = $sheetName."表中耳号或日期信息有误。";
         throw new Exception( $errorMessage );
     }
-    
-    $inProps["sheet"]      = $inSheet;                          //2
-    $inProps["hashOfRows"] = array();                           //7
-    
-    if( $firstEartagInsert ) {
-       $outProps["baseSheet"] = &$inSheet;
-    }
+ 
+    $inProps["sheet"]          = $inSheet;                          //2
+    $inProps["hashOfRows"]     = array();                           //7 
     
     return $dateColumnIndex;
 }
 
-function addMatingNextCycleHeader(&$inProps, &$outProps ) {
+function loadNextMatingAndSetupProps(&$inProps, &$outProps ) {
 
     $num = count($outProps["baseTableHeader"]);
     
     $inProps["eartagIndex"] = -1;
-    for ($col = 0; $col < $num; ++$col) {
+    for ($col = 1; $col <= $num; ++$col) {
         
-        $value = $outProps["baseTableHeader"][$col];
+        $value = $outProps["baseTableHeader"][$col - 1];
         
         if( $value == "耳号" ){
-            $inProps["eartagIndex"]  = $col;                      
+            $inProps["eartagIndex"]  = $col;    
             continue;
         }
 
@@ -233,6 +229,11 @@ function addMatingNextCycleHeader(&$inProps, &$outProps ) {
 
         $outProps["sheet"]->setCellValueByColumnAndRow($outIndex, 1, $value);
     }
+    
+    $inProps["highestColIndex"] = $num + 1;
+        
+    $inProps["sheet"]      = $inProps["baseSheet"];
+    $inProps["hashOfRows"] = &$inProps["baseHashOfRows"];
 }
 
 function addMatingToOutSheet( &$inProps, &$outProps ) {
@@ -418,6 +419,66 @@ function addBirthToOutSheet( &$inProps, &$outProps ) {
     }
 }
 
+function addNextMatingToOutSheet(&$inProps, &$outProps ) {
+    
+    $outSheet             = $outProps["sheet"];
+    $outHighestRowIndex   = $outProps["highestRowIndex"];
+    $outEartagIndex       = $outProps["eartagIndex"];
+    $birthDateIndex       = $outProps["birthDateIndex"];
+    
+    $inSheet              = $inProps["sheet"];
+    $matingDateIndex      = $inProps["dateIndex"];
+        
+    for ($outRowIndex = 2; $outRowIndex <= $outHighestRowIndex; ++$outRowIndex) {
+
+        $key = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
+
+        if( ! array_key_exists($key, $inProps["baseHashOfRows"] )) {
+            continue;
+        }       
+        
+        //在同一张配种表中，找到下一个配种记录
+        if( is_array( $inProps["baseHashOfRows"][ $key ] ) ) {
+            
+            $rowIndexOrArray  = $inProps["baseHashOfRows"][ $key ];
+            
+            $birthDate = $outSheet->getCellByColumnAndRow($birthDateIndex, $outRowIndex)->getValue();
+            
+            if( !$birthDate ) {
+                continue;
+            }
+                        
+            $num = count( $rowIndexOrArray ); 
+            for($idx = 0; $idx < $num; ++$idx){ 
+                $inRowIndex = $rowIndexOrArray[ $idx ];
+                
+                $matingDate = $inSheet->getCellByColumnAndRow($matingDateIndex, $inRowIndex)->getValue();
+                if( !$matingDate ) {
+                    continue;
+                }
+                
+                if( diffInDays($birthDate, $matingDate) > 0) {
+                                             
+                     for ($col = 1; $col <= $inProps["highestColIndex"]; ++$col) {
+                        if($col != $inProps["eartagIndex"]) {
+                            
+                            $value = $inSheet->getCellByColumnAndRow($col, $inRowIndex)->getValue();
+                            $outIndexToInsert = $outProps["highestColIndex"] + $col;
+                            
+                            if($col > $inProps["eartagIndex"]) {
+                                $outIndexToInsert--;
+                            }
+                            
+                            $outSheet->setCellValueByColumnAndRow($outIndexToInsert, $outRowIndex, $value);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+}
+
 function addPregnantCheckToOutSheet( &$inProps, &$outProps){ 
     $outSheet             = $outProps["sheet"];
     $outHighestRowIndex   = $outProps["highestRowIndex"];
@@ -563,7 +624,9 @@ function topfarmMain() {
     addMatingToOutSheetV2($inProps, $outProps);
     $outProps["highestRowIndex"]   = $outProps["sheet"]->getHighestRow();
     $outProps["highestColIndex"]   = $inProps["highestColIndex"];
-    $outProps["hashOfRows"]        = &$inProps["hashOfRows"];
+    
+    $inProps["baseSheet"]        = $inProps["sheet"];
+    $inProps["baseHashOfRows"]   = $inProps["hashOfRows"];
     
     $outProps["birthDateIndex"] = loadInSheetAndSetupProps("分娩", $inProps, $outProps);
     hashOfRowIndexByEartag( $inProps );
@@ -590,8 +653,10 @@ function topfarmMain() {
     addEntryToOutSheet($inProps, $outProps);
     $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["highestColIndex"] - 1;
     
-    addMatingNextCycleHeader($inProps, $outProps);
-    
+    loadNextMatingAndSetupProps($inProps, $outProps);
+    addNextMatingToOutSheet($inProps, $outProps);
+    $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["highestColIndex"] - 1;
+
     $debugEndNoIO = microtime(true);
 
     
