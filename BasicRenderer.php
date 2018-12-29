@@ -141,15 +141,7 @@ function loadInSheetAndSetupProps($sheetName, &$inProps, &$outProps, $firstEarta
     $inProps["eartagIndex"] = -1;
     
     if( $firstEartagInsert ) {
-        $outProps["baseTableHeader"] = array( 0 ); //Index 0 占位，统一到Column从1开始。
-        
-        static $baseHash = array();
-        $inProps["hashOfRows"]     = &$baseHash;
-        $inProps["baseHashOfRows"] = &$baseHash;
-        
-    } 
-    else {
-        $inProps["hashOfRows"] = array();
+        $outProps["baseTableHeader"] = array();
     }
     
     for ($col = 1; $col <= $inProps["highestColIndex"]; ++$col) {
@@ -201,6 +193,7 @@ function loadInSheetAndSetupProps($sheetName, &$inProps, &$outProps, $firstEarta
     }
  
     $inProps["sheet"]          = $inSheet;                          //2
+    $inProps["hashOfRows"]     = array();                           //7 
     
     return $dateColumnIndex;
 }
@@ -210,9 +203,9 @@ function loadNextMatingAndSetupProps(&$inProps, &$outProps ) {
     $num = count($outProps["baseTableHeader"]);
     
     $inProps["eartagIndex"] = -1;
-    for ($col = 1; $col < $num; ++$col) {
+    for ($col = 1; $col <= $num; ++$col) {
         
-        $value = $outProps["baseTableHeader"][$col];
+        $value = $outProps["baseTableHeader"][$col - 1];
         
         if( $value == "耳号" ){
             $inProps["eartagIndex"]  = $col;    
@@ -237,8 +230,8 @@ function loadNextMatingAndSetupProps(&$inProps, &$outProps ) {
         $outProps["sheet"]->setCellValueByColumnAndRow($outIndex, 1, $value);
     }
     
-    $inProps["highestColIndex"] = $num - 1;
-    
+    $inProps["highestColIndex"] = $num + 1;
+        
     $inProps["sheet"]      = $inProps["baseSheet"];
     $inProps["hashOfRows"] = &$inProps["baseHashOfRows"];
 }
@@ -440,14 +433,14 @@ function addNextMatingToOutSheet(&$inProps, &$outProps ) {
 
         $key = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
 
-        if( ! array_key_exists($key, $inProps["hashOfRows"] )) {
+        if( ! array_key_exists($key, $inProps["baseHashOfRows"] )) {
             continue;
         }       
         
         //在同一张配种表中，找到下一个配种记录
-        if( is_array( $inProps["hashOfRows"][ $key ] ) ) {
+        if( is_array( $inProps["baseHashOfRows"][ $key ] ) ) {
             
-            $rowIndexOrArray  = $inProps["hashOfRows"][ $key ];
+            $rowIndexOrArray  = $inProps["baseHashOfRows"][ $key ];
             
             $birthDate = $outSheet->getCellByColumnAndRow($birthDateIndex, $outRowIndex)->getValue();
             
@@ -631,8 +624,10 @@ function topfarmMain() {
     addMatingToOutSheetV2($inProps, $outProps);
     $outProps["highestRowIndex"]   = $outProps["sheet"]->getHighestRow();
     $outProps["highestColIndex"]   = $inProps["highestColIndex"];
-    $inProps["baseSheet"]          = $inProps["sheet"];
-        
+    
+    $inProps["baseSheet"]        = $inProps["sheet"];
+    $inProps["baseHashOfRows"]   = $inProps["hashOfRows"];
+    
     $outProps["birthDateIndex"] = loadInSheetAndSetupProps("分娩", $inProps, $outProps);
     hashOfRowIndexByEartag( $inProps );
     addBirthToOutSheet($inProps, $outProps);
