@@ -479,6 +479,19 @@ function addNextMatingToOutSheet(&$inProps, &$outProps ) {
     }
 }
 
+function getNextMatingDateAfterPregantCheck() {
+    
+}
+
+function addOneExtraColumnToHeader(&$inProps, &$outProps, $extraColName) {
+    
+    $outSheet = $outProps["sheet"];
+    //日期去掉一列，这里不再+1;
+    $outIndex = $outProps["highestColIndex"] + $inProps["highestColIndex"];
+    
+    $outSheet->setCellValueByColumnAndRow($outIndex, 1, $extraColName);
+}
+
 function addPregnantCheckToOutSheet( &$inProps, &$outProps){ 
     $outSheet             = $outProps["sheet"];
     $outHighestRowIndex   = $outProps["highestRowIndex"];
@@ -490,8 +503,7 @@ function addPregnantCheckToOutSheet( &$inProps, &$outProps){
     for ($outRowIndex = 2; $outRowIndex <= $outHighestRowIndex; ++$outRowIndex) {
 
         $eartag = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
-        
-        
+             
         if( ! array_key_exists($eartag, $inProps["hashOfRows"]) ){
             continue;  //配种后无孕检
         }
@@ -639,9 +651,12 @@ function topfarmMain() {
     $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["highestColIndex"] - 1;
 
     $outProps["pregnantCheckDateIndex"] = loadInSheetAndSetupProps("孕检", $inProps, $outProps);
+    
+    //孕检添加“异常复配日期”
+    addOneExtraColumnToHeader($inProps, $outProps, "异常复配日期");
     hashOfRowIndexByEartag( $inProps );
     addPregnantCheckToOutSheet($inProps, $outProps);
-    $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["highestColIndex"] - 1;
+    $outProps["highestColIndex"] = $outProps["highestColIndex"] + $inProps["highestColIndex"];
 
     $outProps["leaveDateIndex"] = loadInSheetAndSetupProps("离场", $inProps, $outProps);
     hashOfRowIndexByEartag( $inProps );
