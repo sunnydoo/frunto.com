@@ -479,10 +479,6 @@ function addNextMatingToOutSheet(&$inProps, &$outProps ) {
     }
 }
 
-function getNextMatingDateAfterPregantCheck() {
-    
-}
-
 function addOneExtraColumnToHeader(&$inProps, &$outProps, $extraColName) {
     
     $outSheet = $outProps["sheet"];
@@ -514,23 +510,30 @@ function addPregnantCheckToOutSheet( &$inProps, &$outProps){
             $num = count( $rowIndexOrArray ); 
             for($idx = 0; $idx < $num; ++$idx){ 
                 $rowIndex = $rowIndexOrArray[ $idx ];
-                appendPregnantCheckToMatingRowByDate($inProps, $outProps, $rowIndex, $outRowIndex);
+                if( appendPregnantCheckToMatingRowByDate($inProps, $outProps, $rowIndex, $outRowIndex, $eartag) ) {
+                    break;
+                }
             }
         }
         else{
-            appendPregnantCheckToMatingRowByDate($inProps, $outProps, $rowIndexOrArray, $outRowIndex);
+            appendPregnantCheckToMatingRowByDate($inProps, $outProps, $rowIndexOrArray, $outRowIndex, $eartag);
         }
     }
 }
 
-function appendPregnantCheckToMatingRowByDate(&$inProps, &$outProps, $rowIndex, $outRowIndex){
+
+
+function appendPregnantCheckToMatingRowByDate(&$inProps, &$outProps, $rowIndex, $outRowIndex, $eartag){
     
     $pregnantCheckDate = $inProps["sheet"]->getCellByColumnAndRow($inProps["dateIndex"], $rowIndex)->getValue();
     $matingDate        = $outProps["sheet"]->getCellByColumnAndRow($outProps["matingDateIndex"], $outRowIndex)->getValue();
         
     $diffDays  = diffInDays($matingDate, $pregnantCheckDate);
         
+    $findMatch = false;
     if($diffDays > 0 and $diffDays < 125 ){
+        $findMatch = true;
+        $outIndexToInsert = -1;
         for ($col = 1; $col <= $inProps["highestColIndex"]; ++$col) {
             if($col != $inProps["eartagIndex"]) {
                 $value = $inProps["sheet"]->getCellByColumnAndRow($col, $rowIndex)->getValue();
@@ -541,7 +544,20 @@ function appendPregnantCheckToMatingRowByDate(&$inProps, &$outProps, $rowIndex, 
                 $outProps["sheet"]->setCellValueByColumnAndRow($outIndexToInsert, $outRowIndex, $value);
             }
         }
+        
+        if( is_array($inProps["baseHashOfRows"][$eartag])) {
+            $count = count($inProps["baseHashOfRows"][$eartag]);
+            for($idx = 0; $idx < $count; $idx++) {
+                $nextMatingDate = $inProps["baseSheet"]->getCellByColumnAndRow($outProps["matingDateIndex"], $inProps["baseHashOfRows"][$eartag][$idx])->getValue();
+                if( diffInDays($pregnantCheckDate, $nextMatingDate) > 0 ) {
+                    $outProps["sheet"]->setCellValueByColumnAndRow(++$outIndexToInsert, $outRowIndex, $nextMatingDate);
+                    break;
+                }
+            }
+        }
     }
+    
+    return $findMatch;
 }
 
 function addLeaveToOutSheet( &$inProps, &$outProps){ 
