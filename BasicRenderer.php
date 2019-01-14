@@ -44,8 +44,10 @@ function appendBirthToMatingRowByDate(&$inProps, &$outProps, $rowIndex, $outRowI
     $matingDate = $outProps["sheet"]->getCellByColumnAndRow($outProps["matingDateIndex"], $outRowIndex)->getValue();
         
     $diffDays  = diffInDays($matingDate, $birthDate);
-        
+    
+    $findMatch = false;
     if($diffDays > 110 and $diffDays < 125){
+        $findMatch = true;
         for ($col = 1; $col <= $inProps["highestColIndex"]; ++$col) {
             if($col != $inProps["eartagIndex"]) {
                 $value = $inProps["sheet"]->getCellByColumnAndRow($col, $rowIndex)->getValue();
@@ -59,6 +61,8 @@ function appendBirthToMatingRowByDate(&$inProps, &$outProps, $rowIndex, $outRowI
             
         }
     }
+    
+    return $findMatch;
 }
 
 function appendWeaningToMatingRowByDate(&$inProps, &$outProps, $rowIndex, $outRowIndex){
@@ -67,8 +71,10 @@ function appendWeaningToMatingRowByDate(&$inProps, &$outProps, $rowIndex, $outRo
     $birthDate = $outProps["sheet"]->getCellByColumnAndRow($outProps["birthDateIndex"], $outRowIndex)->getValue();
         
     $diffDays  = diffInDays($birthDate, $weaningDate);
-        
+    
+    $findMatch = false;
     if($diffDays > 0 and $diffDays < 60 ){
+        $findMatch = true;
         for ($col = 1; $col <= $inProps["highestColIndex"]; ++$col) {
             if($col != $inProps["eartagIndex"]) {
                 $value = $inProps["sheet"]->getCellByColumnAndRow($col, $rowIndex)->getValue();
@@ -81,6 +87,8 @@ function appendWeaningToMatingRowByDate(&$inProps, &$outProps, $rowIndex, $outRo
             }
         }
     }
+    
+    return $findMatch;
 }
 
 function hashOfRowIndexByEartag( &$props ) {
@@ -381,7 +389,9 @@ function addWeaningToOutSheet( &$inProps, &$outProps){
             $num = count( $rowIndexOrArray ); 
             for($idx = 0; $idx < $num; ++$idx){ 
                 $rowIndex = $rowIndexOrArray[ $idx ];
-                appendWeaningToMatingRowByDate($inProps, $outProps, $rowIndex, $outRowIndex);
+                if( appendWeaningToMatingRowByDate($inProps, $outProps, $rowIndex, $outRowIndex) ) {
+                    break;
+                }
             }
         }
         else{
@@ -410,7 +420,9 @@ function addBirthToOutSheet( &$inProps, &$outProps ) {
             $num = count( $rowIndexOrArray ); 
             for($idx = 0; $idx < $num; ++$idx){ 
                 $rowIndex = $rowIndexOrArray[ $idx ];
-                appendBirthToMatingRowByDate($inProps, $outProps, $rowIndex, $outRowIndex);
+                if(appendBirthToMatingRowByDate($inProps, $outProps, $rowIndex, $outRowIndex)) {
+                    break;
+                }
             }
         }
         else{
