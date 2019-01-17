@@ -561,7 +561,7 @@ function appendPregnantCheckToMatingRowByDate(&$inProps, &$outProps, $rowIndex, 
             $count = count($inProps["baseHashOfRows"][$eartag]);
             for($idx = 0; $idx < $count; $idx++) {
                 $nextMatingDate = $inProps["baseSheet"]->getCellByColumnAndRow($outProps["matingDateIndex"], $inProps["baseHashOfRows"][$eartag][$idx])->getValue();
-                if( diffInDays($pregnantCheckDate, $nextMatingDate) > 0 ) {
+                if( diffInDays($pregnantCheckDate, $nextMatingDate) >= 0 ) {
                     $outProps["sheet"]->setCellValueByColumnAndRow(++$outIndexToInsert, $outRowIndex, $nextMatingDate);
                     break;
                 }
@@ -705,7 +705,7 @@ function topfarmMain() {
     
     $writer = PhpOffice\PhpSpreadsheet\IOFactory::createWriter($outSpreadsheet, "Xlsx");
 
-    $outFilePath = "Processed.xlsx";
+    $outFilePath = "topfarm/riquan/Processed.xlsx";
     $writer->save( $outFilePath );
     echo "\nComplete TopFarmDataSource File: ", $outFilePath;
     
