@@ -640,7 +640,7 @@ function addEntryToOutSheet($inProps, $outProps) {
 }
 
 
-function topfarmMain() {
+function render($inFilePath, $outFilePath, $printDebug = false) {
     
     $debugStartTime = microtime(true);
 
@@ -655,7 +655,7 @@ function topfarmMain() {
     $reader->setReadDataOnly(true);
     $reader->setLoadSheetsOnly(["配种", "分娩", "断奶", "孕检", "离场", "进群"]);
     
-    $inSpreadsheet          = $reader->load("TemplateRecords.xlsx");
+    $inSpreadsheet          = $reader->load( $inFilePath );
     $inProps["spreadsheet"] = $inSpreadsheet;
     
     $debugStartNoIO = microtime(true);
@@ -705,17 +705,16 @@ function topfarmMain() {
     
     $writer = PhpOffice\PhpSpreadsheet\IOFactory::createWriter($outSpreadsheet, "Xlsx");
 
-    $outFilePath = "topfarm/riquan/Processed.xlsx";
     $writer->save( $outFilePath );
-    echo "\nComplete TopFarmDataSource File: ", $outFilePath;
     
-    $debugEndTime = microtime(true);
-    
-    echo "\n文件共 ", $outProps["highestRowIndex"], " 行, ", $outProps["highestColIndex"], "列";
-    
-    echo "\n执行时间：", round($debugEndTime - $debugStartTime, 3), "秒";
-    echo "\n不计算IO的执行时间：", round($debugEndNoIO - $debugStartNoIO, 3), "秒\n";
+    if( $printDebug ) {
+        echo "\nComplete TopFarmDataSource File: ", $outFilePath;
+        $debugEndTime = microtime(true);
+        echo "\n文件共 ", $outProps["highestRowIndex"], " 行, ", $outProps["highestColIndex"], "列";
+        echo "\n执行时间：", round($debugEndTime - $debugStartTime, 3), "秒";
+        echo "\n不计算IO的执行时间：", round($debugEndNoIO - $debugStartNoIO, 3), "秒\n";
+    }
 }
 
-// === Start of Main Execution === //
-topfarmMain();
+//For Testing.
+//render("TemplateRecords.xlsx", "TopfarmExcel/riquan/Processed.xlsx", true);
