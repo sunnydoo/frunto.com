@@ -164,13 +164,14 @@ function loadInSheetAndSetupProps($sheetName, &$inProps, &$outProps, $firstEarta
             $inProps["eartagIndex"]  = $col;                      // 5
             if( $firstEartagInsert ) {
                 $outProps["eartagIndex"] = $col;
-        
-                $colString = PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex( $col );
-                $coordinates = $colString."2:".$colString.$outProps["highestRowIndex"]; //like "M2:M128"
-            
-                $outSheet->getStyle( $coordinates )
-                     ->getNumberFormat()
-                     ->setFormatCode( PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+                
+//Robin: is_eartag_exists() 的临时方案，因为直接设置格式不工作
+//                $colString = PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex( $col );
+//                $coordinates = $colString."2:".$colString.$outProps["highestRowIndex"]; //like "M2:M128"
+//            
+//                $outSheet->getStyle( $coordinates )
+//                     ->getNumberFormat()
+//                     ->setFormatCode( PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
             }
             
         }
@@ -370,11 +371,17 @@ function addMatingToOutSheetV2( &$inProps, &$outProps ) {
     }
 }
 
+//Robin: 这是一个丑陋的Bug Fix
+//输入的表里，耳号可能是double，全部转成了string再比较
+function is_eartag_exists($eartag, &$eartagArray) {
+    $type = gettype( $eartag );
     if( $type != 'string' && $type != "integer") {
         settype( $eartag, "string");
     }
+    
     return array_key_exists($eartag, $eartagArray);
 }
+
 function addWeaningToOutSheet( &$inProps, &$outProps){ 
     $outSheet             = $outProps["sheet"];
     $outHighestRowIndex   = $outProps["highestRowIndex"];
