@@ -91,13 +91,19 @@ if( $_SERVER['REQUEST_METHOD'] == 'POST' ) {
               
 		  		<!--NOTE: Update your email Id in "contact_me.php" file in order to receive emails from your contact form-->
 					<form name="sendExcel" id="sendExcel" enctype="multipart/form-data" action="index.php?session=<?=$_GET['session']?>" method="POST"> 
-                    <h2>请上传TopfarmExcel文件</h2>
+                    <h2>上传Topfarm Excel</h2>
+                    <p>&nbsp;</p>
                     <p><?=$msg?></p>
 							 
-                    <div>
-                    <input name="topfarmExcel" id="topfarmExcel" type="file" />   
-					<button type="submit" class="btn btn-primary font-big">一键上传</button></div>
+                    <div class="row">
+                        <div class="col-sm-9"><input name="topfarmExcel" id="topfarmExcel" type="file" />
+                        </div>
+                        <div class="col-sm-3"><button type="submit" class="btn btn-primary">一键上传</button></div>
+                    </div>
 					</form>
+              
+                    <p><span>查看历史表现: </span><a href="tablviz.php?session=<?=$_GET['session']?>"> >> </a></p>
+
 		  </div>
       </div>
     </div>
