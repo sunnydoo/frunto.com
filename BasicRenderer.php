@@ -102,7 +102,7 @@ function hashOfRowIndexByEartag( &$props ) {
         
         $eartag = $sheet->getCellByColumnAndRow($eartagIndex, $rowIndex)->getValue();
 
-        if( array_key_exists($eartag, $props["hashOfRows"]) ){            
+        if( is_eartag_exists($eartag, $props["hashOfRows"]) ){            
             if( is_array( $props["hashOfRows"][ $eartag ] ) ) {
                 array_push($props["hashOfRows"][ $eartag ], $rowIndex);
             } 
@@ -164,7 +164,15 @@ function loadInSheetAndSetupProps($sheetName, &$inProps, &$outProps, $firstEarta
             $inProps["eartagIndex"]  = $col;                      // 5
             if( $firstEartagInsert ) {
                 $outProps["eartagIndex"] = $col;
+        
+                $colString = PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex( $col );
+                $coordinates = $colString."2:".$colString.$outProps["highestRowIndex"]; //like "M2:M128"
+            
+                $outSheet->getStyle( $coordinates )
+                     ->getNumberFormat()
+                     ->setFormatCode( PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
             }
+            
         }
 
         if( $value == "备注"){
@@ -261,7 +269,7 @@ function addMatingToOutSheet( &$inProps, &$outProps ) {
 
         //5天内多次配种，只取一次做后续分析
         $duplicateMating = false;
-        if( array_key_exists($hashKey, $inProps["hashOfRows"]) ) {
+        if( is_eartag_exists($hashKey, $inProps["hashOfRows"]) ) {
             $rowIndexOrArray  = $inProps["hashOfRows"][$hashKey];
             if( is_array($rowIndexOrArray) ){
                 $num = count( $rowIndexOrArray ); 
@@ -362,6 +370,11 @@ function addMatingToOutSheetV2( &$inProps, &$outProps ) {
     }
 }
 
+    if( $type != 'string' && $type != "integer") {
+        settype( $eartag, "string");
+    }
+    return array_key_exists($eartag, $eartagArray);
+}
 function addWeaningToOutSheet( &$inProps, &$outProps){ 
     $outSheet             = $outProps["sheet"];
     $outHighestRowIndex   = $outProps["highestRowIndex"];
@@ -373,7 +386,7 @@ function addWeaningToOutSheet( &$inProps, &$outProps){
         $eartag = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
         
         
-        if( ! array_key_exists($eartag, $inProps["hashOfRows"]) ){
+        if( ! is_eartag_exists($eartag, $inProps["hashOfRows"]) ){
             continue;  //配种后无断奶
         }
 
@@ -409,8 +422,8 @@ function addBirthToOutSheet( &$inProps, &$outProps ) {
     for ($outRowIndex = 2; $outRowIndex <= $outHighestRowIndex; ++$outRowIndex) {
 
         $key = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
-
-        if( ! array_key_exists($key, $inProps["hashOfRows"]) ){
+        
+        if( ! is_eartag_exists($key, $inProps["hashOfRows"]) ){
             continue;  //配种未分娩
         }
 
@@ -445,7 +458,7 @@ function addNextMatingToOutSheet(&$inProps, &$outProps ) {
 
         $key = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
 
-        if( ! array_key_exists($key, $inProps["baseHashOfRows"] )) {
+        if( ! is_eartag_exists($key, $inProps["baseHashOfRows"] )) {
             continue;
         }       
         
@@ -512,7 +525,7 @@ function addPregnantCheckToOutSheet( &$inProps, &$outProps){
 
         $eartag = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
              
-        if( ! array_key_exists($eartag, $inProps["hashOfRows"]) ){
+        if( ! is_eartag_exists($eartag, $inProps["hashOfRows"]) ){
             continue;  //配种后无孕检
         }
 
@@ -581,7 +594,7 @@ function addLeaveToOutSheet( &$inProps, &$outProps){
 
         $eartag = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
         
-        if( ! array_key_exists($eartag, $inProps["hashOfRows"]) ){
+        if( ! is_eartag_exists($eartag, $inProps["hashOfRows"]) ){
             continue;  
         }
 
@@ -614,7 +627,7 @@ function addEntryToOutSheet($inProps, $outProps) {
 
         $eartag = $outSheet->getCellByColumnAndRow($outEartagIndex, $outRowIndex)->getValue();
         
-        if( ! array_key_exists($eartag, $inProps["hashOfRows"]) ){
+        if( ! is_eartag_exists($eartag, $inProps["hashOfRows"]) ){
             continue;  
         }
 
@@ -717,4 +730,4 @@ function render($inFilePath, $outFilePath, $printDebug = false) {
 }
 
 //For Testing.
-//render("TemplateRecords.xlsx", "TopfarmExcel/riquan/Processed.xlsx", true);
+render("2019LHMS.xlsx", "Processed.xlsx", true);
