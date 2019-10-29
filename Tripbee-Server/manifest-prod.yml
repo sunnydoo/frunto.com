@@ -1,0 +1,15 @@
+---
+applications:
+- name: Hands-Free-Fieldservice-API
+  host: hands-free-fieldservice-api
+  buildpack: nodejs_buildpack
+  memory: 128M
+  path: api
+  command: node index.js
+  env:
+    OPTIMIZE_MEMORY: true
+- name: Hands-Free-Fieldservice-UI
+  host: hands-free-fieldservice-ui
+  buildpack: staticfile_buildpack
+  memory: 64M
+  path: ui/build
