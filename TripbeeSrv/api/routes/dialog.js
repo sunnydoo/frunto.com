@@ -8,7 +8,7 @@ const CAI_KEY='181c1a2b3cd368754375e6f487cd6fd5';
 //
 
 //const build = new sapcai.build(process.env.CAI_KEY, 'zh');
-const build = new sapcai.build(CAI_KEY, 'zh');
+const build = new sapcai.build(CAI_KEY, 'en');
 const core = require('../libs/core');
 
 module.exports = (io) => {
@@ -48,7 +48,7 @@ module.exports = (io) => {
         const content = await build.dialog({
             type: 'text',
             content: req.body.message
-        }, { conversationId: req.body.sessionId, language: 'zh' }, memory);  //change to cn,zh
+        }, { conversationId: req.body.sessionId, language: 'en' }, memory);  //change to cn,zh
 
         const messages = [];
         for (const message of content.messages) {
