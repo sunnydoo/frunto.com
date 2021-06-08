@@ -1,8 +1,8 @@
 <?php 
 class TablUtil {
 
-const InternalURL    = "localhost:8080";
-const ExternalURL    = "frunto.com:8080";
+const InternalURL    = "172.21.16.12";
+const ExternalURL    = "82.157.19.106";
 const AuthorizedUser = "FruntoAdmin";
 
 

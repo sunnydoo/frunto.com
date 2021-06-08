@@ -21,11 +21,11 @@ function get_user() {
 }
 
 function get_server() {
-    return "localhost:8080";
+    return "172.21.16.12";
 }
 
 function get_view() {
-    return "views/TopFarm/sheet0";
+    return "views/RunFarms/sheet8";
 }
 
 function get_trusted_ticket($server, $user) {
@@ -43,7 +43,7 @@ function get_trusted_ticket($server, $user) {
     curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
 
     $output = curl_exec($ch);
-
+    
     if( $output === FALSE or $output == "-1" )
          throw new Exception("Tableau Server reported authentication error, please find Tableau Support for assistance.");
 
@@ -57,7 +57,7 @@ function get_trusted_url( $server, $user, $view_url) {
 try{
     $ticket = get_trusted_ticket($server, $user);
     if (strcmp($ticket, "-1") != 0) {
-        return "http://139.199.117.223:8080/trusted/$ticket/$view_url?$params";
+        return "http://82.157.19.106/trusted/$ticket/$view_url?$params";
     }
     else 
         return 0;
@@ -76,7 +76,7 @@ catch (Exception $e) {
 <head>
     <title>TopFarm - 定义养猪的标准表达</title>
     
-    <script type="text/javascript" src="http://139.199.117.223:8080/javascripts/api/tableau-2.min.js"></script>
+    <script type="text/javascript" src="http://82.157.19.106/javascripts/api/tableau-2.min.js"></script>
     <script type="text/javascript">
         function initViz() {
             var containerDiv = document.getElementById("vizContainer");
@@ -97,7 +97,7 @@ catch (Exception $e) {
 </head>
 
 <body onload="initViz();">
-    <H1>漯河民社</H1>
+    <H1>Farms Run </H1>
     <p>&nbsp;</p>
     <div>成都方糖科技TopFarm</div>
     <p>&nbsp;</p>
