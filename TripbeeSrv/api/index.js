@@ -10,7 +10,7 @@ const routes = require('./routes');
 const core = require('./libs/core');
 //modify
 const LITMOS_KEY='c96e6bc2-4e3c-4e59-916c-ccaf712421e1';
-const PORT='9011'
+const PORT='8081'
 //
 app.use(cors());
 app.use(cookieParser());
@@ -68,6 +68,6 @@ const cleanLitmos = () => {
 cleanCoreSystems();
 cleanLitmos();
 
-server.listen(PORT || 9101, null, null, () => {
+server.listen(PORT || 8081, null, null, () => {
     console.log('Api is running!');
 });
