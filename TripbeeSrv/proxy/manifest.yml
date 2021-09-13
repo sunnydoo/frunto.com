@@ -1,9 +1,0 @@
----
-applications:
-- name: Hands-Free-Fieldservice-PROXY
-  host: hands-free-fieldservice-proxy
-  buildpack: nodejs_buildpack
-  memory: 64M
-  command: node index.js
-  env:
-    OPTIMIZE_MEMORY: true
